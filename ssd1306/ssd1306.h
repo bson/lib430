@@ -1,15 +1,18 @@
 /* 
- * SSD1306 based 128x64 monochrome OLED on I2C panel
+ * SSD1306 based 128x64 monochrome OLED
  */
 
-#ifndef _OLED_PANEL_H_
-#define	_OLED_PANEL_H_
+#ifndef _SSD1306_H_
+#define	_SSD1306_H_
 
 #include <stdint.h>
-#include "i2c_master/i2c.h"
 #include "ssd1306/font/runes.h"
 
-class Ssd1306: public I2CDevice {
+namespace ssd1306 {
+
+// Bus,Device need to implement the (simple) protocol of I2CBus, I2CDevice.
+template <typename Bus, typename Device>
+class Panel: public Device {
 private:
     uint8_t _x, _y, _w, _col; // For columnizing
     bool _running;
@@ -59,8 +62,8 @@ public:
     };
 
 public:
-    Ssd1306(I2CBus& bus, uint8_t addr)
-        : I2CDevice(bus, addr) {
+    Panel(Bus& bus, uint8_t addr)
+        : Device(bus, addr) {
     }
 
     void probe();
@@ -75,8 +78,10 @@ private:
     bool output_col_byte(uint8_t byte);
 
     // Disabled
-    Ssd1306(const Ssd1306&);
-    Ssd1306& operator=(const Ssd1306&);
+    Panel(const Panel&);
+    Panel& operator=(const Panel&);
 };
 
-#endif	// _OLED_PANEL_H_
+}; // namespace ssd1306
+
+#endif	// _SSD1306_H_

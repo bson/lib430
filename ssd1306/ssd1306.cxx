@@ -5,27 +5,35 @@
 
 typedef unsigned int uint;
 
-#include "i2c_master/i2c.h"
 #include "ssd1306/ssd1306.h"
 #include "ssd1306/font/runes.h"
+
+#pragma CHECK_ULP("none")
+
+// Realize code for I2C based device
+#include "i2c_master/i2c.h"
+template class ssd1306::Panel<I2CBus, I2CDevice>;
 
 namespace rune_defs {
 #include "ssd1306/font/runes.inc"
 }
 
-void Ssd1306::probe() {
-    if (I2CDevice::state() != I2CDevice::UNATTACHED)
+namespace ssd1306 {
+
+template <typename Bus, typename Device>
+void Panel<Bus,Device>::probe() {
+    if (Device::state() != Device::UNATTACHED)
         return;
 
-    I2CDevice::start_probe();
+    Device::start_probe();
     bool ok = false;
-    if (I2CDevice::start_write(CONTROL_CMD)) {
-        I2CDevice::write(CMD_NO_OP);
-        I2CDevice::write_done();
+    if (Device::start_write(CONTROL_CMD)) {
+        Device::write(CMD_NO_OP);
+        Device::write_done();
         ok = true;  // Responded to ACK, that's all we care about here
     }
 
-    I2CDevice::end_probe(ok);
+    Device::end_probe(ok);
 
     // If attached, initialize and clear
     if (ok) {
@@ -34,17 +42,19 @@ void Ssd1306::probe() {
     }
 }
 
-void Ssd1306::command(uint8_t cmd, uint param) {
-    if (I2CDevice::start_write(CONTROL_CMD)) {
-        I2CDevice::write(cmd);
+template <typename Bus, typename Device>
+void Panel<Bus,Device>::command(uint8_t cmd, uint param) {
+    if (Device::start_write(CONTROL_CMD)) {
+        Device::write(cmd);
         if (param != 0x100) {
-            I2CDevice::write((uint8_t)param);
+            Device::write((uint8_t)param);
         }
-        I2CDevice::write_done();
+        Device::write_done();
     }
 }
 
-void Ssd1306::init() {
+template <typename Bus, typename Device>
+void Panel<Bus,Device>::init() {
     // Initialize the display
     const uint8_t init_seq[] = {
         CONTROL_CMD, CMD_SET_CLOCK_OSC, CONTROL_CMD, 0x80, // Reset value
@@ -65,13 +75,14 @@ void Ssd1306::init() {
         CONTROL_CMD, CMD_DISPLAY_ON
     };
 
-    I2CDevice::write_bytes(init_seq, sizeof init_seq);
+    Device::write_bytes(init_seq, sizeof init_seq);
 }
 
-bool Ssd1306::output_col_byte(uint8_t byte) {
+template <typename Bus, typename Device>
+bool Panel<Bus,Device>::output_col_byte(uint8_t byte) {
     if (!_running || _col >= _w) {
         if (_running) {
-            I2CDevice::write_done();
+            Device::write_done();
         }
 
         command(CMD_SET_PAGE | ((_y/8) & 0xf));
@@ -79,21 +90,22 @@ bool Ssd1306::output_col_byte(uint8_t byte) {
         command(CMD_SET_HIGH_COLUMN | ((_x >> 4) & 0xf));
         _y -= 8;
 
-        if (!I2CDevice::start_write(CONTROL_DATA)) {
+        if (!Device::start_write(CONTROL_DATA)) {
             return false;
         }
         _running = true;
         _col = 0;
     }
 
-    if (!I2CDevice::write(byte))
+    if (!Device::write(byte))
         return false;
 
     ++_col;
     return true;
 }
 
-void Ssd1306::render(uint8_t x, uint8_t y, Rune rune, uint8_t w)  {
+template <typename Bus, typename Device>
+void Panel<Bus,Device>::render(uint8_t x, uint8_t y, Rune rune, uint8_t w)  {
     _running = false;
     _x = x;
     _y = y;
@@ -119,11 +131,12 @@ void Ssd1306::render(uint8_t x, uint8_t y, Rune rune, uint8_t w)  {
     }
 
     if (_running) {
-        I2CDevice::write_done();
+        Device::write_done();
     }
 }
 
-void Ssd1306::clear() {
+template <typename Bus, typename Device>
+void Panel<Bus,Device>::clear() {
     enum { NUM_PAGES = PANEL_HEIGHT / 8 };
 
     for (uint8_t page = 0; page < NUM_PAGES; ++page) {
@@ -131,12 +144,16 @@ void Ssd1306::clear() {
         command(CMD_SET_LOW_COLUMN | 0);
         command(CMD_SET_HIGH_COLUMN | 0);
 
-        if (I2CDevice::start_write(CONTROL_DATA)) {
+        if (Device::start_write(CONTROL_DATA)) {
             for (uint i = PANEL_WIDTH; i > 0; --i) {
-                if (!I2CDevice::write(0))
+                if (!Device::write(0))
                     break;
             }
-            I2CDevice::write_done();
+            Device::write_done();
         }
     }
 }
+
+}; // namespace ssd1306
+
+#pragma RESET_ULP("all")
