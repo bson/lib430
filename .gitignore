@@ -1,0 +1,8 @@
+Debug/
+Debug/*
+Release/
+Release/*
+*.map
+*.out
+*.obj
+*_linkInfo.xml
