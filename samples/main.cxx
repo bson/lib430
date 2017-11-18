@@ -28,7 +28,7 @@
 #include "lib430/i2c_master/i2c.h"
 #include "lib430/pcf8574.h"
 #include "lib430/dac5574.h"
-#include "timer.h"
+#include "lib430/timer.h"
 #include "lib430/ssd1306/ssd1306.h"
 
 #define IRD_PORT_SEL   P2SEL
@@ -48,7 +48,7 @@ enum {
 };
 
 #define IRD_COUNT_UP 1
-#include "ird.h"
+#include "lib430/ird.h"
 
 // I2C device addresses
 enum {

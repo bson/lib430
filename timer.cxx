@@ -18,11 +18,14 @@ void TimerA::init() volatile {
     TA0CCTL0 = CCIE;            // Interrupt on compare
 }
 
+// Suppress ULP advisor's suggestion to use a timer instead of an idle loop...
+#pragma CHECK_ULP("none")
 void TimerA::delay(uint32_t period) volatile {
     const uint32_t end = ticks() + period;
-    while (ticks() < end)
+    while (ticks() < end)  // ...here
         ;
 }
+#pragma RESET_ULP("all")
 
 // CCR0 interrupt
 #pragma vector=TIMER0_A0_VECTOR
