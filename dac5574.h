@@ -13,7 +13,7 @@ public:
         : Device(bus, addr) {
     }
 
-    void probe() { I2CDevice::dummy_probe(); }
+    void probe() { Device::dummy_probe(); }
 
     // Sychronously change all outputs
     void update_all(uint8_t v1, uint8_t v2, uint8_t v3, uint8_t v4);
