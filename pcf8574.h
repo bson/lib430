@@ -2,21 +2,24 @@
 #define _PCF8574_H_
 
 #include <stdint.h>
-#include "i2c_master/i2c.h"
 
+namespace pcf8574 {
 
-class Pcf8574: public I2CDevice {
+template <typename Bus, typename Device>
+class Expander: public Device {
 public:
-    Pcf8574(I2CBus& bus, uint8_t addr)
-        : I2CDevice(bus, addr) {
+    Expander(Bus& bus, uint8_t addr)
+        : Device(bus, addr) {
     }
 
-    void probe() { I2CDevice::dummy_probe(); }
+    void probe() { Device::dummy_probe(); }
 
-    void set(uint8_t bits) { I2CDevice::transmit(bits); }
+    void set(uint8_t bits) { Device::transmit(bits); }
 private:
-    Pcf8574(const Pcf8574&);
-    Pcf8574& operator=(const Pcf8574&);
+    Expander(const Expander&);
+    Expander& operator=(const Expander&);
+};
+
 };
 
 #endif // _PCF8574_H_

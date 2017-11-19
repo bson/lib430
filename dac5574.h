@@ -3,12 +3,14 @@
 
 #include <msp430.h>
 #include <stdint.h>
-#include "i2c_master/i2c.h"
 
-class Dac5574: public I2CDevice {
+namespace dac5574 {
+
+template <typename Bus, typename Device>
+class DAC: public Device {
 public:
-    Dac5574(I2CBus& bus, uint8_t addr)
-        : I2CDevice(bus, addr) {
+    DAC(Bus& bus, uint8_t addr)
+        : Device(bus, addr) {
     }
 
     void probe() { I2CDevice::dummy_probe(); }
@@ -21,8 +23,10 @@ protected:
     void write_control(uint8_t control, uint8_t msb, uint8_t lsb = 0);
 
 private:
-    Dac5574(const Dac5574&);
-    Dac5574& operator=(const Dac5574&);
+    DAC(const DAC&);
+    DAC& operator=(const DAC&);
 };
+
+}; // namespace dac5574
 
 #endif	// _DAC5574_H_
