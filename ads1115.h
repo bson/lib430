@@ -46,9 +46,7 @@ public:
 
     ADC(Bus& bus, uint8_t addr)
         : Device(bus, addr),
-          _channel(IN0),
-          _fsr(FSR_2_048),
-          _sps(SPS_128) {
+          _config(0) {
     }
 
     void probe() { Device::dummy_probe(); }
