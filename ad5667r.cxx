@@ -12,10 +12,10 @@ void DAC<Bus,Device>::update(uint16_t v0, uint16_t v1) {
     v1 = cal_correct(1, v1);
 
     if (Device::start_write(0b00000000)) {
-        Device::write(v0 >> 15)
+        Device::write(v0 >> 8)
         Device::write(v0 & 0xff);
         Device::write(0b00010001);
-        Device::write(v1 >> 15);
+        Device::write(v1 >> 8);
         Device::write(v1 & 0xff);
         Device::write_done();
     }
