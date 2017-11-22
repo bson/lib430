@@ -5,18 +5,11 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// There's only a single bus, so use a global.  I2CBus is merely
-// a namespace since all methods are static in this implementation.
-extern class I2CBus _i2c_bus_master;
+#include "g2553.h"
 
-// Make USCI B0 look like a generic bus.  This is really just a
-// namespace, so just a bunch of static inline functions.  The global
-// however WILL have a footprint of 1 byte so it has a unique address.
-// TODO: make sure no vtable is emitted.
-class I2CBus {
+template <typename USCI>
+class I2CBus: public USCI {
     const uint8_t _prescale;
-
-    friend class I2CDevice;
 
     enum {
         SIG_TX = 1,
@@ -30,7 +23,7 @@ public:
 
     void init();
 
-protected:
+public:
     // Begin a write transaction and write the first byte.
     bool start_write(uint8_t addr, uint8_t data);
 
@@ -42,23 +35,17 @@ protected:
 
     // Check if bus is busy (has ongoing transaction).
     uint8_t busy() {
-        return UCB0STAT & UCBBUSY;
+        return USCI.STAT & USCI.UBUSY;
     }
 
     // Start transaction.
-    void start(uint8_t slave, bool read);
+    bool start_read(uint8_t addr, uint8_t& val);
 
-    // Send byte
-    void send(uint8_t v);    
+    // Read byte
+    bool read(uint8_t& data);
 
-    // Receive byte
-    // This is a placeholder... no use case currently for tx functionality.
-    uint8_t recv();
-
-    // End bus transaction
-    void stop();
-
-    void wait(uint8_t mask);
+    // Done reading
+    void read_done();
 
 private:
     // Wait for TXBUF ready.  Returns false on timeout or other error.
@@ -73,8 +60,12 @@ private:
 };
 
 
+// There's only a single bus, on UCB0, so use a global.
+extern class I2CBus<UCB0> _i2c_bus_master;
+
 // I2C device.
-class I2CDevice {
+template <typename USCI>
+class I2CDevice: public USCI {
 public:
     enum State {
         UNATTACHED = 0,     // Device hasn't responded to probe
@@ -88,7 +79,7 @@ private:
 
 public:
     // Single bus constructor uses global _i2c_bus_master.
-    I2CDevice(I2CBus&, uint8_t slave_addr)
+    I2CDevice(I2CBus<USCI>&, uint8_t slave_addr)
         : _addr(slave_addr),
           _state(UNATTACHED) {
     }
@@ -138,18 +129,31 @@ public:
     // Write byte array
     void write_bytes(const uint8_t *data, size_t len);
 
-    void start_read() { _i2c_bus_master.start(_addr, true); }
+    bool start_read(uint8_t& data) {
+        if (_state != UNATTACHED) {
+            if (_i2c_bus_master.start_read(_addr, data)) {
+                return true;
+            }
+            _state = UNATTACHED;
+        }
+        return false;
+    }
+
+    // Read byte
+    bool read(uint8_t& data);
+
+    // Read block.  Len should be the max length and is updated to reflect the number read.
+    void read_bytes(uint8_t* data, size_t& len);
+
+    // Read done, stop
+    void read_done() {
+        if (_state != UNATTACHED) {
+            _i2c_bus_master.read_done();
+        }
+    }
 
     // Convenience function to send one or two bytes
     void transmit(uint8_t byte1, uint16_t byte2 = 0x100);
-
-    // XXX stuff below goes away when read is fixed up
-
-    void stop() { _i2c_bus_master.stop(); }
-    void send_byte(uint8_t byte) { _i2c_bus_master.send(byte); }
-    uint8_t recv_byte() { return _i2c_bus_master.recv(); }
-    bool busy() { return _i2c_bus_master.busy() != 0; }
-    void wait_for_idle();
 
 private:
     I2CDevice(const I2CDevice&);
