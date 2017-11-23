@@ -7,12 +7,7 @@
  * they're greater than I2C bus latencies.  The timings were verified
  * on a DSO by capturing E+RS.  
  *
- * The code is not I2C specific, so this is a consideration.
- * 
  * The timing should resolve itself with future work to the Timer.
- * 
- * With a 100kHz I2C bus this code will output almost 700 cps, which
- * means a line of 20 outputs in under 30ms.
  * 
  */
 
