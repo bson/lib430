@@ -1,5 +1,5 @@
-#ifndef _USCI_B_H_
-#define _USCI_B_H_
+#ifndef _USCI_A_H_
+#define _USCI_A_H_
 
 #include <msp430.h>
 #include <stdint.h>
@@ -17,8 +17,10 @@ template <volatile uint8_t& _STAT,
           volatile uint8_t& _IRTCTL,
           volatile uint8_t& _IRRCTL,
           volatile uint8_t& _IE2,
-          volatile uint8_t& _IFG2>
-class UCB {
+          volatile uint8_t& _IFG2,
+          uint8_t _RXIFG,
+          uint8_t _TXIFG>
+class UCA0 {
 public:
     enum {
         // UART-Mode Bits
@@ -42,7 +44,6 @@ public:
         RXEIE = UCRXEIE,
         BRKIE = UCBRKIE,
         DORM = UCDORM,
-        TXADDR = UCTXADDR,
         TXBRK = UCTXBRK,
         SWRST = UCSWRST,
 
@@ -53,7 +54,10 @@ public:
         BRK = UCBRK,
         RXERR = UCRXERR,
         UBUSY = UCBUSY,
-        IDLE = UCIDLE
+        IDLE = UCIDLE,
+
+        RXIFG = _RXIFG,
+        TXIFG = _TXIFG
     };
 
     volatile uint8_t& STAT;
@@ -70,7 +74,7 @@ public:
     volatile uint8_t& IE2;
     volatile uint8_t& IFG2;
 
-    UCB() 
+    UCA() 
         : STAT(_STAT),
           CTL0(_CTL0),
           CTL1(_CTL1),
@@ -87,4 +91,9 @@ public:
     }
 };
 
-#endif //_USCI_B_H_
+typedef UCA<UCA0STAT, UCA0CTL0, UCA0CTL1, UCA0MCTL, 
+            UCA0BR0, UCA0BR1, UCA0RXBUF, UCA0TXBUF,
+            UCA0ABCTL, UCA0IRTCTL, UCA0IRRCTL,
+            IE2, IFG2, UCA0RXIFG, UCA0TXIFG> UCA0;
+
+#endif //_USCI_A_H_
