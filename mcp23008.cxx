@@ -9,6 +9,7 @@ void Expander<Bus,Device>::init() {
     Device::transmit(MCP23008_IODIR, 0);
     Device::transmit(MCP23008_GPPU, 0);
     Device::transmit(MCP23008_GPINTEN, 0);
+    Device::transmit(MCP23008_IOCON, 0b0010000);  // Set SEQOP
 }
 
 
