@@ -23,7 +23,7 @@ public:
     void set_format(uint32_t bps = 9600, bool parity = false, 
                     bool evenpar = false, bool bits8 = true, 
                     bool spb2 = false, bool autocrlf = true) {
-        uint8_t bits = USCI.CTL0 & ~(PEN|PAR|MSB|U7BIT|SPB|0b110|SYNC);
+        uint8_t bits = USCI.CTL0 & ~(PEN|PAR|MSB|U7BIT|SPB|MODE0|MODE1|SYNC);
         if (parity) {
             bits |= PEN;
             if (even)  
@@ -62,8 +62,6 @@ public:
     }
     bool read_ready() { return USCI.IFG2 & RXIFG; }
     uint8_t read() { return USCI.RXBUF; }
-        
-
 };
 
 #endif // _UART_H_
