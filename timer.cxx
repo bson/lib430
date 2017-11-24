@@ -19,10 +19,13 @@ void TimerA::init() volatile {
 }
 
 // Suppress ULP advisor's suggestion to use a timer instead of an idle loop...
+void TimerA::delay(uint32_t period)  {
+    _timer.wait(_timer.future(period));
+}
+
 #pragma CHECK_ULP("none")
-void TimerA::delay(uint32_t period) volatile {
-    const uint32_t end = ticks() + period;
-    while (ticks() < end)  // ...here
+void TimerA::wait(const TimerA::Future& future) {
+    while (!_timer.due(future))
         ;
 }
 #pragma RESET_ULP("all")

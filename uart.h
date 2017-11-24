@@ -20,9 +20,10 @@ public:
     // Parameters: rate, parity enable, even parity, 8 bits, 2 stop bits
     // Does not permit setting big-endian bit order, non-UART mode, or
     // synchronous mode.
-    void set_format(uint32_t bps = 9600, bool parity = false, 
+    // Default is 19200,N,8,1,autocr
+    void set_format(uint32_t bps = 19200, bool parity = false, 
                     bool evenpar = false, bool bits8 = true, 
-                    bool spb2 = false, bool autocrlf = true) {
+                    bool spb2 = false, bool autocr = true) {
         uint8_t bits = USCI.CTL0 & ~(PEN|PAR|MSB|U7BIT|SPB|MODE0|MODE1|SYNC);
         if (parity) {
             bits |= PEN;
@@ -36,11 +37,11 @@ public:
 
         USCI.CTL0 = bits;
         
-        const uint16_t rate = SMCLK/bps;
+        const uint16_t rate = uint32_t(SMCLK)/bps;
         USCI.BR1 = rate >> 8;
         USCI.BR0 = rate & 0xff;
 
-        _nl = autocrlf;
+        _nl = autocr;
     }
 
     bool start_write(uint8_t data) { write(data); return true; }
