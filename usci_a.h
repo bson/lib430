@@ -1,7 +1,7 @@
 #ifndef _USCI_A_H_
 #define _USCI_A_H_
 
-#include <msp430.h>
+#include "common.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -22,7 +22,7 @@ template <volatile uint8_t& _STAT,
           volatile uint8_t& _IFG2,
           uint8_t _RXIFG,
           uint8_t _TXIFG>
-class UCA0 {
+class UCA {
 public:
     enum {
         // UART-Mode Bits
@@ -78,10 +78,5 @@ public:
 
     UCA() { ; }
 };
-
-typedef UCA<UCA0STAT, UCA0CTL0, UCA0CTL1, UCA0MCTL, 
-            UCA0BR0, UCA0BR1, UCA0RXBUF, UCA0TXBUF,
-            UCA0ABCTL, UCA0IRTCTL, UCA0IRRCTL,
-            IE2, IFG2, UCA0RXIFG, UCA0TXIFG> UCA0;
 
 #endif //_USCI_A_H_

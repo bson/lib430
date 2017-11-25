@@ -40,8 +40,9 @@ public:
         USCI.CTL0 = bits;
         
         const uint16_t rate = uint32_t(SMCLK)/bps;
-        USCI.BR1 = rate >> 8;
-        USCI.BR0 = rate & 0xff;
+        USCI.BR1  = rate >> 8;
+        USCI.BR0  = rate & 0xff;
+        USCI.MCTL = 0;
 
         _nl = autocr;
     }
