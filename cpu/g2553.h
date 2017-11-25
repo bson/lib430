@@ -27,8 +27,11 @@ typedef Port<msp430::P2IN, msp430::P2OUT, msp430::P2DIR, msp430::P2SEL,
              msp430::P2SEL2, msp430::P2REN, msp430::P2IFG, msp430::P2IES,
              msp430::P2IE> Port2;
 
+extern volatile uint8_t _dummy_byte;
+
 // 28 pin devices only
-//typedef Port<msp430::P2IN, msp430::P2OUT, msp430::P2DIR, msp430::P2SEL,
-//             msp430::P2SEL2, msp430::P2REN> Port3;
+typedef Port<msp430::P3IN, msp430::P3OUT, msp430::P3DIR, msp430::P3SEL,
+            msp430::P3SEL2, msp430::P3REN, _dummy_byte, _dummy_byte,
+            _dummy_byte> Port3;
 
 #endif // _G2553_H_

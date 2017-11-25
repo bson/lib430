@@ -5,7 +5,7 @@
 #include "accessors.h"
 
 // Port 1,2 has all of registers, while P3-P7 lack the edge interrupt
-// support and lack the last three.
+// support and so don't have those three registers.
 
 template <volatile uint8_t& _IN,
           volatile uint8_t& _OUT,
@@ -51,11 +51,12 @@ public:
         SEL1 = 0b01,
         SEL2 = 0b10,
         SEL3 = 0b11,
+        IO_PIN = SEL0
     };
 
     enum Pullup {
-        ENABLE = MASK,
-        DISABLE = 0
+        PULL_RESISTOR = MASK,
+        NO_RESISTOR   = 0
     };
 
     // Pin.IN gettor
@@ -73,6 +74,9 @@ public:
         PORT.P_DIR  = (PORT.P_DIR  & ~MASK) | uint8_t(dir);
         PORT.P_SEL  = (PORT.P_SEL  & ~MASK) | (uint8_t(sel) & 1);
         PORT.P_SEL2 = (PORT.P_SEL2 & ~MASK) | ((uint8_t(sel) >> 1) & 1);
+        if (sel != IO_PIN) {
+            ren = NO_RESISTOR;
+        }
         PORT.P_REN  = (PORT.P_REN  & ~MASK) | uint8_t(ren);
     };
                                
