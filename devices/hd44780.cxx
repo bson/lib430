@@ -12,6 +12,7 @@
  */
 
 #include "common.h"
+#include "cpu/g2553.h"
 #include "timer.h"
 #include "hd44780.h"
 
@@ -26,13 +27,13 @@ void Disp::init(bool backlight) {
     
     Device::init();
 
-    _timer.delay(MSEC(15));
+    _sysTimer.delay(MSEC(15));
     write_reg(RS_IR, 0x3);
-    _timer.delay(MSEC(5));
+    _sysTimer.delay(MSEC(5));
     write_reg(RS_IR, 0x3);
-    _timer.delay(USEC(1000));
+    _sysTimer.delay(USEC(1000));
     write_reg(RS_IR, 0x2);
-    _timer.delay(USEC(CMD_DELAY));
+    _sysTimer.delay(USEC(CMD_DELAY));
 
     command(CMD_FUNCTIONSET | MODE_4BIT | LINES_2 | DOTS_5X8);
     command(CMD_DISPLAYCONTROL | DISPLAYON | CURSOROFF | BLINKOFF);
