@@ -1,6 +1,9 @@
 #ifndef _GPIO_H_
 #define _GPIO_H_
 
+#include "common.h"
+#include "accessors.h"
+
 // Port 1,2 has all of registers, while P3-P7 lack the edge interrupt
 // support and lack the last three.
 
