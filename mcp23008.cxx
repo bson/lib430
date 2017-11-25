@@ -1,5 +1,5 @@
-#include <stdint.h>
-#include <mcp23008.h>
+#include "common.h"
+#include "mcp23008.h"
 
 namespace mcp23008 {
 

@@ -1,12 +1,8 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
-#include <msp430.h>
-#include <stdint.h>
-#include <limits.h>
-
-#include "config.h"
 #include "common.h"
+#include "config.h"
 
 #define TIMER_USEC(U)  (uint32_t(U)*TimerA::CLOCK/1000000UL)
 #define TIMER_MSEC(M)  (uint32_t(M)*TimerA::CLOCK/1000UL)
@@ -56,7 +52,7 @@ public:
     uint32_t ticks() const volatile {
         NoInterrupt g;
 
-        return _time + TA0R;
+        return _time + msp430::TA0R;
     }
 
     Future future(uint32_t ticks) volatile {

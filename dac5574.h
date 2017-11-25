@@ -1,8 +1,7 @@
 #ifndef _DAC5574_H_
 #define _DAC5574_H_
 
-#include <msp430.h>
-#include <stdint.h>
+#include "common.h"
 
 namespace dac5574 {
 

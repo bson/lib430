@@ -1,7 +1,7 @@
 #ifndef _PCF8574_H_
 #define _PCF8574_H_
 
-#include <stdint.h>
+#include "common.h"
 
 namespace pcf8574 {
 

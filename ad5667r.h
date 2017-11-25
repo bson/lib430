@@ -21,8 +21,7 @@
 // The inclusion of only 15 values means the size of the table is 15*4 = 60 bytes
 // and the table plus a 32 bit checksum fits in a 64-byte flash or EEPROM sector.
 
-#include <msp430.h>
-#include <stdint.h>
+#include "common.h"
 
 namespace ad5667r {
 

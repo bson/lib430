@@ -1,5 +1,4 @@
-#include <msp430.h>
-#include <stdint.h>
+#include "common.h"
 #include "ad5667r.h"
 
 typedef unsigned int uint;

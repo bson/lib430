@@ -11,7 +11,7 @@
  * 
  */
 
-#include <msp430.h>
+#include "common.h"
 #include "timer.h"
 #include "hd44780.h"
 

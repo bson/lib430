@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "accessors.h"
+
 template <volatile uint8_t& _STAT,
           volatile uint8_t& _CTL0,
           volatile uint8_t& _CTL1,
@@ -50,31 +52,19 @@ public:
         IDLE = UCIDLE
     };
 
-    volatile uint8_t& STAT;
-    volatile uint8_t& CTL0;
-    volatile uint8_t& CTL1;
-    volatile uint8_t& BR0;
-    volatile uint8_t& BR1;
-    volatile uint8_t& I2CIE;
-    volatile uint8_t& RXBUF;
-    volatile uint8_t& TXBUF;
-    volatile uint16_t& I2COA;
-    volatile uint16_t& I2CSA;
-    volatile uint8_t& IFG;
-
-    UCB() 
-        : STAT(_STAT),
-          CTL0(_CTL0),
-          CTL1(_CTL1),
-          BR0(_BR0),
-          BR1(_BR1),
-          I2CIE(_I2CIE),
-          RXBUF(_RXBUF),
-          TXBUF(_TXBUF),
-          I2COA(_I2COA),
-          I2CSA(_I2CSA),
-          IFG(_IFG) {
-    }
+    ACCESSOR(volatile uint8_t&, getSTAT, _STAT);
+    ACCESSOR(volatile uint8_t&, getCTL0, _CTL0);
+    ACCESSOR(volatile uint8_t&, getCTL1, _CTL1);
+    ACCESSOR(volatile uint8_t&, getBR0, _BR0);
+    ACCESSOR(volatile uint8_t&, getBR1, _BR1);
+    ACCESSOR(volatile uint8_t&, getI2CIE, _I2CIE);
+    ACCESSOR(volatile uint8_t&, getRXBUF, _RXBUF);
+    ACCESSOR(volatile uint8_t&, getTXBUF, _TXBUF);
+    ACCESSOR(volatile uint16_t&, getI2COA, _I2COA);
+    ACCESSOR(volatile uint16_t&, getI2CSA, _I2CSA);
+    ACCESSOR(volatile uint8_t&, getIFG, _IFG);
+    
+    UCB() { ; }
 };
 
 #endif //_USCI_B_H_

@@ -1,10 +1,7 @@
 #ifndef _I2C_H_
 #define _I2C_H_
 
-#include <msp430.h>
-#include <stdint.h>
-#include <stddef.h>
-
+#include "common.h"
 #include "g2553.h"
 
 template <typename USCI>

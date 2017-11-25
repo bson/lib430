@@ -1,6 +1,8 @@
 #ifndef _HD44780_H_
 #define _HD44780_H_
 
+#include "common.h"
+
 namespace hd44780 {
 
 template <typename Bus, typename Device, int LINEWIDTH=20>

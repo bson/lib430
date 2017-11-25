@@ -1,6 +1,21 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+namespace msp430 {
+#include <msp430.h>
+};
+
+#include <stdint.h>
+#include <stddef.h>
+
+typedef unsigned int uint;
+
+// Various compiler stuff; GCC extensions also supported by TI-CC
+#define _weak_ attribute((weak))
+#define _ro_ attribute((section ".rodata"))
+#define _packed_ attribute((packed))
+
+
 // These two wrap the MSP430 compiler intrinsics to factor it out as a compiler
 // dependency.
 static inline void

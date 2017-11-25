@@ -1,7 +1,4 @@
-#include <msp430.h>
-#include <stdint.h>
-#include <stddef.h>
-
+#include "common.h"
 #include "i2c_master/i2c.h"
 #include "timer.h"
 

@@ -1,10 +1,8 @@
 // 
 // SSD1306 based 128x64 monochrome OLED on I2C panel
 //
-#include <stdint.h>
 
-typedef unsigned int uint;
-
+#include "common.h"
 #include "ssd1306/ssd1306.h"
 #include "ssd1306/font/runes.h"
 

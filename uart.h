@@ -1,6 +1,8 @@
 #ifndef _UART_H_
 #define _UART_H_
 
+#include "common.h"
+
 template <typename USCI>
 class Uart: public USCI {
     bool _nl;
@@ -10,9 +12,9 @@ public:
     void init() 
         : _nl(false) {
 
-        USCI.CTL1 |= SWRST;
-        USCI.CTL1 &= ~SWRST;
-        USCI.CTL1 = SSEL1; // SMCLK (0b10)
+        USCI.CTL1 |= msp430::SWRST;
+        USCI.CTL1 &= ~msp430::SWRST;
+        USCI.CTL1 = msp430::SSEL1; // SMCLK (0b10)
 
         USCI.STAT = 0;
     }
@@ -49,10 +51,10 @@ public:
         if (_nl && data == '\n') {
             write('\r');
         }
-        while (!(USCI.IFG2 & TXIFG))
+        while (!(USCI.IFG2 & USCI.TXIFG))
             ;
         USCI.TXBUF = data;
-        USCI.IFG2 &= ~TXIFG;
+        USCI.IFG2 &= ~USCI.TXIFG;
     }
     bool write_done() { }
 
@@ -61,7 +63,7 @@ public:
         while (*s) 
             puts(*s++);
     }
-    bool read_ready() { return USCI.IFG2 & RXIFG; }
+    bool read_ready() { return USCI.IFG2 & USCI.RXIFG; }
     uint8_t read() { return USCI.RXBUF; }
 };
 

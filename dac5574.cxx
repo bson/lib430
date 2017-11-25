@@ -1,5 +1,4 @@
-#include <msp430.h>
-#include <stdint.h>
+#include "common.h"
 #include "dac5574.h"
 
 namespace dac5574 {

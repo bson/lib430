@@ -1,8 +1,5 @@
-#include <msp430.h>
-#include <stdint.h>
+#include "common.h"
 #include "ads1115.h"
-
-typedef unsigned int uint;
 
 namespace ads1115 {
 

@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "accessors.h"
+
 template <volatile uint8_t& _STAT,
           volatile uint8_t& _CTL0,
           volatile uint8_t& _CTL1,
@@ -60,35 +62,21 @@ public:
         TXIFG = _TXIFG
     };
 
-    volatile uint8_t& STAT;
-    volatile uint8_t& CTL0;
-    volatile uint8_t& CTL1;
-    volatile uint8_t& MCTL;
-    volatile uint8_t& BR0;
-    volatile uint8_t& BR1;
-    volatile uint8_t& RXBUF;
-    volatile uint8_t& TXBUF;
-    volatile uint8_t& ABCTL;
-    volatile uint8_t& IRTCTL;
-    volatile uint8_t& IRRCTL;
-    volatile uint8_t& IE2;
-    volatile uint8_t& IFG2;
+    ACCESSOR(volatile uint8_t&, getSTAT, _STAT);
+    ACCESSOR(volatile uint8_t&, getCTL0, _CTL0);
+    ACCESSOR(volatile uint8_t&, getCTL1, _CTL1);
+    ACCESSOR(volatile uint8_t&, getMCTL, _MCTL);
+    ACCESSOR(volatile uint8_t&, getBR0, _BR0);
+    ACCESSOR(volatile uint8_t&, getBR1, _BR1);
+    ACCESSOR(volatile uint8_t&, getRXBUF, _RXBUF);
+    ACCESSOR(volatile uint8_t&, getTXBUF, _TXBUF);
+    ACCESSOR(volatile uint8_t&, getABCTL, _ABCTL);
+    ACCESSOR(volatile uint8_t&, getIRTCTL, _IRTCTL);
+    ACCESSOR(volatile uint8_t&, getIRRCTL, _IRRCTL);
+    ACCESSOR(volatile uint8_t&, getIE2, _IE2);
+    ACCESSOR(volatile uint8_t&, getIFG2, _IFG2);
 
-    UCA() 
-        : STAT(_STAT),
-          CTL0(_CTL0),
-          CTL1(_CTL1),
-          MCTL(_MCTL),
-          BR0(_BR0),
-          BR1(_BR1),
-          RXBUF(_RXBUF),
-          TXBUF(_TXBUF),
-          ABCTL(_ABCTL),
-          IRTCTL(_IRTCTL),
-          IRRCTL(_IRRCTL),
-          IE2(_IE2),
-          IFG2(_IFG2) {
-    }
+    UCA() { ; }
 };
 
 typedef UCA<UCA0STAT, UCA0CTL0, UCA0CTL1, UCA0MCTL, 

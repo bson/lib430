@@ -1,6 +1,4 @@
-#include <msp430.h>
-#include <stdint.h>
-
+#include "common.h"
 #include "timer.h"
 
 enum {
@@ -12,10 +10,12 @@ void TimerA::init() volatile {
 
     // At max CPU frequency SMCLK is 2MHz, and we tick the timer at
     // 250kHz.
-    TA0CTL = TACLR;
-    TA0CTL = TASSEL_2|ID_3|MC_2; // SMCLK, divide by 8, continuous mode
-    TA0CCR0  = INTR_COUNT;
-    TA0CCTL0 = CCIE;            // Interrupt on compare
+    msp430::TA0CTL = TACLR;
+
+     // SMCLK, divide by 8, continuous mode
+    msp430::TA0CTL = TASSEL_2|ID_3|MC_2;
+    msp430::TA0CCR0  = INTR_COUNT;
+    msp430::TA0CCTL0 = CCIE;            // Interrupt on compare
 }
 
 // Suppress ULP advisor's suggestion to use a timer instead of an idle loop...
@@ -33,10 +33,10 @@ void TimerA::wait(const TimerA::Future& future) {
 // CCR0 interrupt
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void TimerA::_ccr0_intr_() {
-    if (TA0CTL & TAIFG) {
-        const uint16_t count = TA0R;
-        TA0R -= INTR_COUNT + 4;
-        _timer._time += count + 4;
+    if (msp430::TA0CTL & TAIFG) {
+        const uint16_t count = msp430::TA0R;
+        msp430::TA0R = 0;
+        _timer._time += count;
     }
 }
 

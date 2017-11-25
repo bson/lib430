@@ -1,7 +1,7 @@
 #ifndef _MCP23008_H_
 #define _MCP23008_H_
 
-#include <stdint.h>
+#include "common.h"
 
 namespace mcp23008 {
 

@@ -1,8 +1,7 @@
 #ifndef _ADS1115_H_
 #define _ADS1115_H_
 
-#include <msp430.h>
-#include <stdint.h>
+#include "common.h"
 
 namespace ads1115 {
 
