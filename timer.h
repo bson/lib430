@@ -3,19 +3,26 @@
 
 #include "common.h"
 #include "config.h"
+#include "accessors.h"
 
 #define TIMER_USEC(U)  (uint32_t(U)*TimerA::CLOCK/1000000UL)
 #define TIMER_MSEC(M)  (uint32_t(M)*TimerA::CLOCK/1000UL)
 #define TIMER_SEC(S) (uint32_t(S)*TimerA::CLOCK)
 
 
-// System needs a timer someplace.
-extern class TimerA _timer;
-
-// TIMER_A
+// TIMER_A3
 // This basic timer runs in continuous UP mode, rolling over.
 // Compare registers are used relative to the value.
-class TimerA {
+template <volatile uint16_t& _CTL,
+          volatile uint16_t& _R,
+          volatile uint16_t& _CCTL0,
+          volatile uint16_t& _CCR0,
+          volatile uint16_t& _CCTL1,
+          volatile uint16_t& _CCR1,
+          volatile uint16_t& _CCTL2,
+          volatile uint16_t& _CCR2,
+          volatile uint16_t& _IV>
+class TimerA3 {
     volatile uint32_t _time;
 
 public:
@@ -44,6 +51,16 @@ public:
         CLOCK = ::SMCLK/8
     };
 
+    ACCESSOR(volatile uint16_t&, getCTL, _CTL);
+    ACCESSOR(volatile uint16_t&, getR, _R);
+    ACCESSOR(volatile uint16_t&, getCCTL0, _CCTL0);
+    ACCESSOR(volatile uint16_t&, getCCR0, _CCR0);
+    ACCESSOR(volatile uint16_t&, getCCTL1, _CCTL1);
+    ACCESSOR(volatile uint16_t&, getCCR1, _CCR1);
+    ACCESSOR(volatile uint16_t&, getCCTL2, _CCTL2);
+    ACCESSOR(volatile uint16_t&, getCCR2, _CCR2);
+    ACCESSOR(volatile uint16_t&, getIV, _IV);
+
     void init() volatile;
 
     void delay(uint32_t ticks);
@@ -52,7 +69,7 @@ public:
     uint32_t ticks() const volatile {
         NoInterrupt g;
 
-        return _time + msp430::TA0R;
+        return _time + TA_R;
     }
 
     Future future(uint32_t ticks) volatile {

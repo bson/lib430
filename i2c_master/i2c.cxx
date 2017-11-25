@@ -31,8 +31,8 @@ bool I2CBus<USCI>::start_write(uint8_t addr, uint8_t data) {
         USCI.TXBUF = data;
 
         // Wait for slave ACK (TXSTT clears)
-        const uint32_t deadline = _timer.ticks() + TIMER_MSEC(1);
-        while ((USCI.CTL1 & USCI.TXSTT) && _timer.ticks() < deadline)
+        const uint32_t deadline = _sysTimer.ticks() + TIMER_MSEC(1);
+        while ((USCI.CTL1 & USCI.TXSTT) && _sysTimer.ticks() < deadline)
             ;
 
         if (!(USCI.CTL1 & USCI.TXSTT) && !(USCI.STAT & USCI.NACKIFG)) {
@@ -67,18 +67,18 @@ void I2CBus<USCI>::write_done() {
 
     // Needed to keep the next start_write from terminating this.  At 100kHz
     // wait 100us.  At 400kHz wait 25us.
-    _timer.delay(TIMER_USEC(100*100000/I2C_BUS_SPEED));
+    _sysTimer.delay(TIMER_USEC(100*100000/I2C_BUS_SPEED));
 }
 
 // * private
 template <typename USCI>
 bool I2CBus<USCI>::wait_tx() {
-   if (USCI.IFG & USCI.TXIFG) {
+    if (USCI.IFG & USCI.TXIFG) {
         return true;
     }
 
-    const uint32_t deadline = _timer.ticks() + TIMER_MSEC(3);
-    while (_timer.ticks() < deadline) {
+    const SysTimer::Future f = _sysTimer.future(TIMER_MSEC(3));
+    while (!_sysTimer.due(f)) {
         if (USCI.IFG & USCI.TXIFG) {
             return true;
         }

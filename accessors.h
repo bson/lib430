@@ -41,6 +41,7 @@
 #define ABCTL getABCTL()
 #define BR0 getBR0()
 #define BR1 getBR1()
+#define CTL getCTL()
 #define CTL0 getCTL0()
 #define CTL1 getCTL1()
 #define I2CIE getI2CIE()
@@ -54,6 +55,14 @@
 #define MCTL getMCTL()
 #define RXBUF getRXBUF()
 #define STAT getSTAT()
+#define TA_CCTL0 getCCTL0()
+#define TA_CCR0 getCCR0()
+#define TA_CCTL1 getCCTL1()
+#define TA_CCR1 getCCR1()
+#define TA_CCTL2 getCCTL2()
+#define TA_CCR2 getCCR2()
+#define TA_IV getIV()
+#define TA_R getR()
 #define TXBUF getTXBUF()
 
 #endif // _ACCESSORS_H_
