@@ -14,9 +14,11 @@ template <volatile uint16_t& _CTL,   \
           volatile uint16_t& _CCR1,  \
           volatile uint16_t& _CCTL2, \
           volatile uint16_t& _CCR2,  \
-          volatile uint16_t& _IV>
+          volatile uint16_t& _IV,    \
+          uint INTVEC0,              \
+          uint INTVEC1 >
 
-#define PARMS _CTL,_R,_CCTL0,_CCR0,_CCTL1,_CCR1,_CCTL2,_CCR2,_IV
+#define PARMS _CTL,_R,_CCTL0,_CCR0,_CCTL1,_CCR1,_CCTL2,_CCR2,_IV,INTVEC0,INTVEC1
 
 TEMPLATE_TIMER_A3
 void TimerA3<PARMS>::init() volatile {
@@ -47,9 +49,9 @@ void TimerA3<PARMS>::wait(const TimerA3<PARMS>::Future& future) {
 #pragma RESET_ULP("all")
 
 // CCR0 interrupt
-#pragma vector=TIMER0_A0_VECTOR
 TEMPLATE_TIMER_A3
-__interrupt void TimerA3<PARMS>::_ccr0_intr_() {
+_intr_(INTVEC0)
+void TimerA3<PARMS>::_ccr0_intr_() {
     if (_sysTimer.CTL & TAIFG) {
         const uint16_t count = _sysTimer.TA_R;
         _sysTimer.TA_R = 0;
@@ -57,8 +59,8 @@ __interrupt void TimerA3<PARMS>::_ccr0_intr_() {
     }
 }
 
-// TA interrupt
-#pragma vector=TIMER0_A1_VECTOR
+// TA,CC1 interrupt
 TEMPLATE_TIMER_A3
-__interrupt void TimerA3<PARMS>::_ta_intr_() {
+_intr_(INTVEC1)
+void TimerA3<PARMS>::_ta_intr_() {
 }

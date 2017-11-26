@@ -21,7 +21,9 @@ template <volatile uint16_t& _CTL,
           volatile uint16_t& _CCR1,
           volatile uint16_t& _CCTL2,
           volatile uint16_t& _CCR2,
-          volatile uint16_t& _IV>
+          volatile uint16_t& _IV,
+          uint INTVEC0,
+          uint INTVEC1>
 class TimerA3 {
     volatile uint32_t _time;
 
@@ -88,8 +90,8 @@ public:
     }
 
 private:
-    static __interrupt void _ccr0_intr_();
-    static __interrupt void _ta_intr_();
+    static _intr_(INTVEC0) void _ccr0_intr_();
+    static _intr_(INTVEC1) void _ta_intr_();
 };
 
 #endif // _TIMER_H_

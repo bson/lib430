@@ -11,9 +11,10 @@ namespace msp430 {
 typedef unsigned int uint;
 
 // Various compiler stuff; GCC extensions also supported by TI-CC
-#define _weak_ attribute((weak))
-#define _ro_ attribute((section ".rodata"))
-#define _packed_ attribute((packed))
+#define _weak_ __attribute__((weak))
+#define _ro_ __attribute__((section ".rodata"))
+#define _packed_ __attribute__((packed))
+#define _intr_(VEC) __interrupt __attribute__((interrupt(VEC)))
 
 
 // These two wrap the MSP430 compiler intrinsics to factor it out as a compiler

@@ -9,7 +9,8 @@
 
 typedef TimerA3<msp430::TA0CTL, msp430::TA0R, msp430::TA0CCTL0,
                 msp430::TA0CCR0, msp430::TA0CCTL1, msp430::TA0CCR1,
-                msp430::TA0CCTL2, msp430::TA0CCR2, msp430::TA0IV> TimerA3_0;
+                msp430::TA0CCTL2, msp430::TA0CCR2, msp430::TA0IV,
+                TIMER0_A0_VECTOR, TIMER0_A1_VECTOR> TimerA3_0;
 
 // System needs a timer someplace.
 typedef TimerA3_0 SysTimer;
