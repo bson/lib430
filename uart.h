@@ -7,10 +7,9 @@ template <typename USCI>
 class Uart: public USCI {
     bool _nl;
 public:
-    Uart() { }
+    Uart() : _nl(false) { }
 
-    void init() 
-        : _nl(false) {
+    void init() {
 
         USCI.CTL1 |= msp430::SWRST;
         USCI.CTL1 &= ~msp430::SWRST;
