@@ -37,13 +37,14 @@ public:
 // e.g. P1xxx to P2xxx.
 template <typename PORT,
           uint8_t  _BIT>
-class Pin: public PORT {
+class Pin {
 public:
     enum { MASK = 1 << _BIT };
 
     enum Direction {
         OUTPUT = MASK,
-        INPUT  = 0
+        INPUT  = 0,
+        MODULE = 0
     };
 
     enum Select {
@@ -60,24 +61,24 @@ public:
     };
 
     // Pin.IN gettor
-    static force_inline uint8_t getIN() { return PORT.P_IN & MASK; }
+    static force_inline uint8_t getIN() { return PORT::P_IN & MASK; }
 
     // Set pin state
     static force_inline void set(bool state) {
-        PORT.P_OUT = (PORT.P_OUT & ~MASK) | (state ? MASK : 0);
+        PORT::P_OUT = (PORT::P_OUT & ~MASK) | (state ? MASK : 0);
     }
 
     // Configure
     static force_inline void config(Direction dir,
                                     Select sel,
-                                    Pullup ren) {
-        PORT.P_DIR  = (PORT.P_DIR  & ~MASK) | uint8_t(dir);
-        PORT.P_SEL  = (PORT.P_SEL  & ~MASK) | (uint8_t(sel) & 1);
-        PORT.P_SEL2 = (PORT.P_SEL2 & ~MASK) | ((uint8_t(sel) >> 1) & 1);
+                                    Pullup ren = NO_RESISTOR) {
+        PORT::P_DIR  = (PORT::P_DIR  & ~MASK) | uint8_t(dir);
+        PORT::P_SEL  = (PORT::P_SEL  & ~MASK) | ((uint8_t(sel) & 1) << _BIT);
+        PORT::P_SEL2 = (PORT::P_SEL2 & ~MASK) | (((uint8_t(sel) >> 1) & 1) << _BIT);
         if (sel != IO_PIN) {
             ren = NO_RESISTOR;
         }
-        PORT.P_REN  = (PORT.P_REN  & ~MASK) | uint8_t(ren);
+        PORT::P_REN  = (PORT::P_REN  & ~MASK) | uint8_t(ren);
     };
                                
 };

@@ -25,7 +25,7 @@ typedef UCA<msp430::UCA0STAT, msp430::UCA0CTL0, msp430::UCA0CTL1,
 typedef UCB<msp430::UCB0STAT, msp430::UCB0CTL0, msp430::UCB0CTL1,
             msp430::UCB0BR0, msp430::UCB0BR1, msp430::UCB0I2CIE,
             msp430::UCB0RXBUF, msp430::UCB0TXBUF, msp430::UCB0I2COA,
-            msp430::UCB0I2CSA, msp430::UC0IFG> UCB0;
+            msp430::UCB0I2CSA, msp430::UC0IFG, UCB0TXIFG, UCB0RXIFG> UCB0;
 
 typedef Port<msp430::P1IN, msp430::P1OUT, msp430::P1DIR, msp430::P1SEL,
              msp430::P1SEL2, msp430::P1REN, msp430::P1IFG, msp430::P1IES,
