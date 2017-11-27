@@ -17,7 +17,9 @@ template <volatile uint8_t& _STAT,
           volatile uint8_t& _TXBUF,
           volatile uint16_t& _I2COA,
           volatile uint16_t& _I2CSA,
-          volatile uint8_t& _IFG>
+          volatile uint8_t& _IFG,
+          uint8_t _TXIFG,
+          uint8_t _RXIFG>
 class UCB {
 public:
     enum {
@@ -44,12 +46,19 @@ public:
         SSEL_1 = UCSSEL_1,
         SSEL_2 = UCSSEL_2,
         SSEL_3 = UCSSEL_3,
+        SWRST = UCSWRST,
+        SYNC = UCSYNC,
 
         LISTEN = UCLISTEN,
         RXERR = UCRXERR,
         ADDR = UCADDR,
         UBUSY = UCBUSY,
-        IDLE = UCIDLE
+        IDLE = UCIDLE,
+
+        NACKIFG = UCNACKIFG,
+
+        TXIFG = _TXIFG,
+        RXIFG = _RXIFG
     };
 
     ACCESSOR(volatile uint8_t&, getSTAT, _STAT);

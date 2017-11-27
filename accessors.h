@@ -49,7 +49,7 @@
 #define I2CSA getI2CSA()
 #define CPU_IE2 getIE2()
 #define CPU_IFG getIFG()
-#define IG2 getIFG2()
+#define CPU_IFG2 getIFG2()
 #define P_DIR getPDIR()
 #define P_IN getPIN()
 #define P_OUT getPOUT()

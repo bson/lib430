@@ -4,18 +4,18 @@
 #include "common.h"
 
 template <typename USCI>
-class Uart: public USCI {
+class Uart {
     bool _nl;
 public:
     Uart() : _nl(false) { }
 
     void init() {
 
-        USCI.CTL1 |= msp430::SWRST;
-        USCI.CTL1 &= ~msp430::SWRST;
-        USCI.CTL1 = msp430::SSEL1; // SMCLK (0b10)
+        USCI::CTL1 |= USCI::SWRST;
+        USCI::CTL1 &= ~USCI::SWRST;
+        USCI::CTL1 = USCI::SSEL1; // SMCLK (0b10)
 
-        USCI.STAT = 0;
+        USCI::STAT = 0;
     }
      
     // Parameters: rate, parity enable, even parity, 8 bits, 2 stop bits
@@ -25,23 +25,24 @@ public:
     void set_format(uint32_t bps = 19200, bool parity = false, 
                     bool evenpar = false, bool bits8 = true, 
                     bool spb2 = false, bool autocr = true) {
-        uint8_t bits = USCI.CTL0 & ~(PEN|PAR|MSB|U7BIT|SPB|MODE0|MODE1|SYNC);
+        uint8_t bits = USCI::CTL0 & ~(USCI::PEN|USCI::PAR|USCI::MSB|USCI::U7BIT|
+                                        USCI::SPB|USCI::MODE0|USCI::MODE1|USCI::SYNC);
         if (parity) {
-            bits |= PEN;
-            if (even)  
-                bits |= PAR;
+            bits |= USCI::PEN;
+            if (evenpar)
+                bits |= USCI::PAR;
         }
         if (spb2)
-            bits |= SPB;
+            bits |= USCI::SPB;
         if (!bits8)
-            bits |= U7BIT;
+            bits |= USCI::U7BIT;
 
-        USCI.CTL0 = bits;
+        USCI::CTL0 = bits;
         
         const uint16_t rate = uint32_t(SMCLK)/bps;
-        USCI.BR1  = rate >> 8;
-        USCI.BR0  = rate & 0xff;
-        USCI.MCTL = 0;
+        USCI::BR1  = rate >> 8;
+        USCI::BR0  = rate & 0xff;
+        USCI::MCTL = 0;
 
         _nl = autocr;
     }
@@ -51,20 +52,21 @@ public:
         if (_nl && data == '\n') {
             write('\r');
         }
-        while (!(USCI.IFG2 & USCI.TXIFG))
+        while (!(USCI::CPU_IFG2 & USCI::TXIFG))
             ;
-        USCI.TXBUF = data;
-        USCI.IFG2 &= ~USCI.TXIFG;
+        USCI::TXBUF = data;
+        USCI::CPU_IFG2 &= ~USCI::TXIFG;
+        return true;
     }
-    bool write_done() { }
+    bool write_done() { return true; }
 
     void putc(char c) { write(c); }
     void puts(const char *s) {
         while (*s) 
-            puts(*s++);
+            putc(*s++);
     }
-    bool read_ready() { return USCI.IFG2 & USCI.RXIFG; }
-    uint8_t read() { return USCI.RXBUF; }
+    bool read_ready() { return USCI::CPU_IFG2 & USCI::RXIFG; }
+    uint8_t read() { return USCI::RXBUF; }
 };
 
 #endif // _UART_H_

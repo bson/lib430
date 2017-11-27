@@ -5,9 +5,9 @@
 #include "config.h"
 #include "accessors.h"
 
-#define TIMER_USEC(U)  (uint32_t(U)*TimerA::CLOCK/1000000UL)
-#define TIMER_MSEC(M)  (uint32_t(M)*TimerA::CLOCK/1000UL)
-#define TIMER_SEC(S) (uint32_t(S)*TimerA::CLOCK)
+#define TIMER_USEC(U)  (uint32_t(U)*SysTimer::CLOCK/1000000UL)
+#define TIMER_MSEC(M)  (uint32_t(M)*SysTimer::CLOCK/1000UL)
+#define TIMER_SEC(S) (uint32_t(S)*SysTimer::CLOCK)
 
 
 // TIMER_A3
@@ -29,10 +29,8 @@ class TimerA3 {
 
 public:
     class Future {
-        friend class TimerA;
-    protected:
         uint32_t _time;
-
+    public:
         Future(uint32_t t = 0)  // also default ctor
         : _time(t) {
         }
@@ -41,10 +39,11 @@ public:
         : _time(f._time) {
         }
 
-    public:
         void adjust(int32_t amount) {
             _time += amount;
         }
+
+        uint32_t time() const { return _time; }
     };
 
     enum {
@@ -74,14 +73,14 @@ public:
         return _time + TA_R;
     }
 
-    Future future(uint32_t ticks) volatile {
-        return Future(_timer.ticks() + ticks);
+    Future future(uint32_t t) volatile {
+        return Future(ticks() + t);
     }
 
     // Calculate signed distance between current time and future, treated as a
     // sequence with a span of up 2^31 CLOCKs.
     int32_t remainder(const Future& future) const volatile {
-        return int32_t(future._time - ticks());
+        return int32_t(future.time() - ticks());
     }
 
     // True if future is due past due

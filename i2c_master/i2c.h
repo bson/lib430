@@ -5,7 +5,7 @@
 #include "cpu/g2553.h"
 
 template <typename USCI>
-class I2CBus: public USCI {
+class I2CBus {
     const uint8_t _prescale;
 
     enum {
@@ -32,7 +32,7 @@ public:
 
     // Check if bus is busy (has ongoing transaction).
     uint8_t busy() {
-        return USCI.STAT & USCI.UBUSY;
+        return USCI::STAT & USCI::UBUSY;
     }
 
     // Start transaction.
@@ -62,7 +62,7 @@ extern class I2CBus<UCB0> _i2c_bus_master;
 
 // I2C device.
 template <typename USCI>
-class I2CDevice: public USCI {
+class I2CDevice {
 public:
     enum State {
         UNATTACHED = 0,     // Device hasn't responded to probe
