@@ -39,6 +39,10 @@ public:
         : _time(f._time) {
         }
 
+        bool operator<(const Future& rhs) const {
+            return int32_t(_time - rhs._time) < 0;
+        }
+
         void adjust(int32_t amount) {
             _time += amount;
         }
