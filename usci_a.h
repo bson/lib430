@@ -20,6 +20,8 @@ template <volatile uint8_t& _STAT,
           volatile uint8_t& _IRRCTL,
           volatile uint8_t& _IE2,
           volatile uint8_t& _IFG2,
+          uint8_t _RXIE,
+          uint8_t _TXIE,
           uint8_t _RXIFG,
           uint8_t _TXIFG>
 class UCA {
@@ -48,6 +50,8 @@ public:
         DORM = UCDORM,
         TXBRK = UCTXBRK,
         SWRST = UCSWRST,
+        RXIE  = _TXIE,
+        TXIE  = _RXIE,
 
         LISTEN = UCLISTEN,
         FE = UCFE,

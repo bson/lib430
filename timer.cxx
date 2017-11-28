@@ -1,9 +1,7 @@
+#ifdef _MAIN_
+
 #include "common.h"
 #include "timer.h"
-
-enum {
-    INTR_COUNT = 0xf800
-};
 
 #define TEMPLATE_TIMER_A3 \
 template <volatile uint16_t& _CTL,   \
@@ -31,6 +29,7 @@ void TimerA3<PARMS>::init() volatile {
      // SMCLK, divide by 8, continuous mode
     CTL = TASSEL_2|ID_3|MC_2;
     TA_CCR0  = INTR_COUNT;
+    TA_R     = 0;               // Clear existing count
     TA_CCTL0 = CCIE;            // Interrupt on compare
 }
 
@@ -49,18 +48,16 @@ void TimerA3<PARMS>::wait(const TimerA3<PARMS>::Future& future) {
 #pragma RESET_ULP("all")
 
 // CCR0 interrupt
-TEMPLATE_TIMER_A3
-_intr_(INTVEC0)
-void TimerA3<PARMS>::_ccr0_intr_() {
-    if (_sysTimer.CTL & TAIFG) {
-        const uint16_t count = _sysTimer.TA_R;
-        _sysTimer.TA_R = 0;
-        _sysTimer._time += count;
+void _intr_(TIMER0_A0_VECTOR) _ccr0_intr_() {
+    if (SysTimer::CTL & TAIFG) {
+        const uint16_t count = SysTimer::TA_R;
+        SysTimer::TA_R = 0;
+        SysTimer::_time += count;
     }
 }
 
 // TA,CC1 interrupt
-TEMPLATE_TIMER_A3
-_intr_(INTVEC1)
-void TimerA3<PARMS>::_ta_intr_() {
+void _intr_(TIMER0_A1_VECTOR) _ta_intr_() {
 }
+
+#endif // _MAIN_

@@ -25,9 +25,10 @@ template <volatile uint16_t& _CTL,
           uint INTVEC0,
           uint INTVEC1>
 class TimerA3 {
-    volatile uint32_t _time;
 
 public:
+    volatile static uint32_t _time;
+
     class Future {
         uint32_t _time;
     public:
@@ -52,8 +53,9 @@ public:
 
     enum {
 		MIN_WAIT = 10,
-        MAX_WAIT = (1L << 30) - 1, // In CLOCKs
-        CLOCK = ::SMCLK/8
+        MAX_WAIT = (1UL << 30) - 1, // In CLOCKs
+        CLOCK = ::SMCLK/8,
+        INTR_COUNT = 0xf800
     };
 
     ACCESSOR(volatile uint16_t&, getCTL, _CTL);
@@ -91,10 +93,6 @@ public:
     bool due(const Future& future) const volatile {
         return remainder(future) <= 0;
     }
-
-private:
-    static _intr_(INTVEC0) void _ccr0_intr_();
-    static _intr_(INTVEC1) void _ta_intr_();
 };
 
 #endif // _TIMER_H_

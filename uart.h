@@ -15,6 +15,7 @@ public:
         USCI::CTL1 = USCI::SSEL1; // SMCLK (0b10)
 
         USCI::STAT = 0;
+        USCI::CPU_IE2 &= ~(USCI::TXIE | USCI::RXIE);
     }
      
     // Parameters: rate, parity enable, even parity, 8 bits, 2 stop bits

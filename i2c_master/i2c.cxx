@@ -1,3 +1,5 @@
+#ifdef _MAIN_
+
 #include "common.h"
 #include "i2c_master/i2c.h"
 #include "timer.h"
@@ -136,3 +138,5 @@ void I2CDevice<USCI>::read_bytes(uint8_t* data, size_t& len) {
 }
 
 #pragma RESET_ULP("all")
+
+#endif // _MAIN_
