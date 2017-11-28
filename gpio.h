@@ -39,7 +39,13 @@ template <typename PORT,
           uint8_t  _BIT>
 class Pin {
 public:
-    enum { MASK = 1 << _BIT };
+    // This permits accessing the underlying GPIO port directly
+    typedef PORT Port;
+
+    enum {
+        MASK = 1 << _BIT,
+        BIT  = _BIT
+    };
 
     enum Direction {
         OUTPUT = MASK,
@@ -83,4 +89,40 @@ public:
                                
 };
 
+// Dummy no-op pin for uses where no pin is needed.
+class NoPin {
+public:
+    enum { MASK = 1 };
+
+    enum Direction {
+        OUTPUT = MASK,
+        INPUT  = 0,
+        MODULE = 0
+    };
+
+    enum Select {
+        SEL0 = 0b00,
+        SEL1 = 0b01,
+        SEL2 = 0b10,
+        SEL3 = 0b11,
+        IO_PIN = SEL0
+    };
+
+    enum Pullup {
+        PULL_RESISTOR = MASK,
+        NO_RESISTOR   = 0
+    };
+
+    // Pin.IN gettor
+    static force_inline uint8_t getIN() { return 0; }
+
+    // Set pin state
+    static force_inline void set(bool state) { }
+
+    // Configure
+    static force_inline void config(Direction dir,
+                                    Select sel,
+                                    Pullup ren = NO_RESISTOR) { };
+
+};
 #endif // _GPIO_H_
