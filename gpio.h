@@ -62,8 +62,9 @@ public:
     };
 
     enum Pullup {
-        PULL_RESISTOR = MASK,
-        NO_RESISTOR   = 0
+        NO_RESISTOR   = 0,
+        PULLUP = 1,
+		PULLDOWN = 2
     };
 
     // Pin.IN gettor
@@ -84,7 +85,10 @@ public:
         if (sel != IO_PIN) {
             ren = NO_RESISTOR;
         }
-        PORT::P_REN  = (PORT::P_REN  & ~MASK) | uint8_t(ren);
+        PORT::P_REN  = (PORT::P_REN  & ~MASK) | (ren ? MASK : 0);
+        if (ren && dir == INPUT) {
+        		PORT::P_OUT = (PORT::P_OUT & ~MASK) | (ren == PULLUP ? MASK : 0);
+        }
     };
                                
 };
