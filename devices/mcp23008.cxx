@@ -1,3 +1,5 @@
+#ifdef _MAIN_
+
 #include "common.h"
 #include "mcp23008.h"
 
@@ -14,3 +16,5 @@ void Expander<Bus,Device>::init() {
 
 
 };
+
+#endif // _MAIN_

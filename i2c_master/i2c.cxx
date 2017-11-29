@@ -137,6 +137,16 @@ void I2CDevice<USCI>::read_bytes(uint8_t* data, size_t& len) {
 
 }
 
+template <typename USCI>
+void I2CDevice<USCI>::transmit(uint8_t byte1, uint16_t byte2) {
+	if (start_write(byte1)) {
+		if (byte2 != 0x100) {
+			write(byte2);
+		}
+		write_done();
+	}
+}
+
 #pragma RESET_ULP("all")
 
 #endif // _MAIN_

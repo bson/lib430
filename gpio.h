@@ -67,6 +67,11 @@ public:
 		PULLDOWN = 2
     };
 
+    enum Edge {
+    		RISE = 0,
+		FALL = MASK
+    };
+
     // Pin.IN gettor
     static force_inline uint8_t getIN() { return PORT::P_IN & MASK; }
 
@@ -75,10 +80,15 @@ public:
         PORT::P_OUT = (PORT::P_OUT & ~MASK) | (state ? MASK : 0);
     }
 
+    // Get state
+    static force_inline bool get() {
+    		return PORT::P_IN & MASK;
+    }
+
     // Configure
-    static force_inline void config(Direction dir,
-                                    Select sel,
-                                    Pullup ren = NO_RESISTOR) {
+    static void config(Direction dir,
+    				      Select sel,
+				      Pullup ren = NO_RESISTOR) {
         PORT::P_DIR  = (PORT::P_DIR  & ~MASK) | uint8_t(dir);
         PORT::P_SEL  = (PORT::P_SEL  & ~MASK) | ((uint8_t(sel) & 1) << _BIT);
         PORT::P_SEL2 = (PORT::P_SEL2 & ~MASK) | (((uint8_t(sel) >> 1) & 1) << _BIT);
@@ -90,7 +100,33 @@ public:
         		PORT::P_OUT = (PORT::P_OUT & ~MASK) | (ren == PULLUP ? MASK : 0);
         }
     };
-                               
+
+    // Enable pin interrupt
+    static force_inline void enable_int(Edge edge) {
+    		PORT::P_IES = (PORT::P_IES & ~MASK) | uint8_t(edge);
+    		PORT::P_IFG &= ~MASK;
+    		PORT::P_IE  |= MASK;
+    };
+
+    // Disable pin interrupt
+    static force_inline void disable_int() {
+    		PORT::P_IE  &= ~MASK;
+    };
+
+    // Check for interrupt flag
+    static force_inline bool pending_int() {
+    		return PORT::P_IFG & MASK;
+    }
+
+    // Toggle edge interrupt sense
+    static force_inline void toggle_edge() {
+    		PORT::P_IES ^= MASK;
+    }
+
+    // Acknowledge interrupt
+    static force_inline void ack_int() {
+    		PORT::P_IFG &= ~MASK;
+    };
 };
 
 // Dummy no-op pin for uses where no pin is needed.
@@ -117,16 +153,20 @@ public:
         NO_RESISTOR   = 0
     };
 
-    // Pin.IN gettor
+    enum Edge {
+    		RISE = 0,
+		FALL = MASK
+    };
+
     static force_inline uint8_t getIN() { return 0; }
-
-    // Set pin state
     static force_inline void set(bool state) { }
-
-    // Configure
     static force_inline void config(Direction dir,
                                     Select sel,
                                     Pullup ren = NO_RESISTOR) { };
-
+    static force_inline void enable_int(Edge edge) { };
+    static force_inline void disable_int() { };
+    static force_inline bool pending_int() { return false; }
+    static force_inline void toggle_edge() { };
+    static force_inline void ack_int() { };
 };
 #endif // _GPIO_H_

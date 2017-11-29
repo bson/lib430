@@ -10,6 +10,7 @@
  * The timing should resolve itself with future work to the Timer.
  * 
  */
+#ifdef _MAIN_
 
 #include "common.h"
 #include "cpu/g2553.h"
@@ -27,13 +28,13 @@ void Disp::init(bool backlight) {
     
     Device::init();
 
-    _sysTimer.delay(MSEC(15));
-    write_reg(RS_IR, 0x3);
-    _sysTimer.delay(MSEC(5));
-    write_reg(RS_IR, 0x3);
-    _sysTimer.delay(USEC(1000));
-    write_reg(RS_IR, 0x2);
-    _sysTimer.delay(USEC(CMD_DELAY));
+    _sysTimer.delay(TIMER_MSEC(15));
+    write_reg(IR, 0x3);
+    _sysTimer.delay(TIMER_MSEC(5));
+    write_reg(IR, 0x3);
+    _sysTimer.delay(TIMER_USEC(1000));
+    write_reg(IR, 0x2);
+    _sysTimer.delay(TIMER_USEC(CMD_DELAY));
 
     command(CMD_FUNCTIONSET | MODE_4BIT | LINES_2 | DOTS_5X8);
     command(CMD_DISPLAYCONTROL | DISPLAYON | CURSOROFF | BLINKOFF);
@@ -61,4 +62,5 @@ void Disp::write_reg(Disp::Register reg, uint8_t value) {
 
 };  // namespace hd44780
 
+#endif // _MAIN_
 

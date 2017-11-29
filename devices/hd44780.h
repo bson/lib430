@@ -66,18 +66,18 @@ public:
 
     // Issue command (IR)
     void command(uint8_t cmd) {
-        write_reg(RS_IR, cmd);
+        write_reg(IR, cmd);
         //_timer.delay(USEC(CMD_DELAY));
     }
 
     void clear() {
-        command(CLEARDISPLAY);
-        _timer.delay(USEC(1500));
+        command(CMD_CLEARDISPLAY);
+        _sysTimer.delay(TIMER_USEC(1500));
     }
 
     void home() {
-        command(RETURNHOME);
-        _timer.delay(USEC(1500));
+        command(CMD_RETURNHOME);
+        _sysTimer.delay(TIMER_USEC(1500));
     }
 
     void setpos(uint8_t l, uint8_t p) {
@@ -87,7 +87,7 @@ public:
     }
 
     void putc(char c) {
-        write(RS_DR, (uint8_t)c);
+        write_reg(DR, (uint8_t)c);
         //_timer.delay(USEC(LCD_DATA_DELAY));
     }
 
