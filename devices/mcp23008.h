@@ -26,7 +26,7 @@ public:
     }
 
     void probe() {
-        if (Device::state() == UNATTACHED) {
+        if (Device::state() == Device::UNATTACHED) {
             Device::dummy_probe();
             init();
         }

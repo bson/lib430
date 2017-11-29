@@ -1,3 +1,5 @@
+#ifdef _MAIN_
+
 #include "common.h"
 #include "ad5667r.h"
 
@@ -48,3 +50,5 @@ void DAC<Bus,Device,NBITS>::install_cal_table(uint8_t output, uint32_t *table) {
 }
 
 }; // namespace ad5667r
+
+#endif // _MAIN_

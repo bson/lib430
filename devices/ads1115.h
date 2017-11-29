@@ -50,6 +50,9 @@ public:
 
     void probe() { Device::dummy_probe(); }
 
+    // Pro forma
+    void force_inline init() { }
+
     // Select input, gain, and SPS
     void config(uint8_t channel, uint8_t fsr, uint8_t sps) {
         _config = ((_channel | 0b100) << 12) | (fsr << 9) | (_sps << 5);

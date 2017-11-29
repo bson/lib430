@@ -1,3 +1,5 @@
+#ifdef _MAIN_
+
 #include "common.h"
 #include "dac5574.h"
 
@@ -21,3 +23,5 @@ void DAC<Bus,Device>::update_all(uint8_t v0, uint8_t v1, uint8_t v2, uint8_t v3)
 }
 
 };
+
+#endif // _MAIN_

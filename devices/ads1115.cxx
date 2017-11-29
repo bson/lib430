@@ -1,3 +1,5 @@
+#ifdef _MAIN_
+
 #include "common.h"
 #include "ads1115.h"
 
@@ -14,3 +16,5 @@ void ADC<Bus,Device>::start_single_read() {
 
 
 }; // namespace ads1115
+
+#endif // _MAIN_

@@ -34,12 +34,15 @@ class DAC: public Device {
 
 public:
     DAC(Bus& bus, uint8_t addr)
-        : Device(bus, addr),
-          _cal_table(NULL, NULL),
-          _bad_cal(false, false) {
+        : Device(bus, addr) {
+    		_cal_table[0] = _cal_table[1] = NULL;
+    		_bad_cal[0] = _bad_cal[1] = false;
     }
 
     void probe() { Device::dummy_probe(); }
+
+    // Pro forma
+    void force_inline init() { }
 
     // Install calibration table
     void install_cal_table(uint8_t output, uint32_t *table);

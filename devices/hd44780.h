@@ -86,7 +86,7 @@ public:
         command(CMD_SETDDRAMADDR | (addr[l] + p));
     }
 
-    void putc(char c) {
+    void force_inline putc(char c) {
         write_reg(DR, (uint8_t)c);
         //_timer.delay(USEC(LCD_DATA_DELAY));
     }
@@ -100,8 +100,8 @@ private:
   	// Maps values to GPIO pins
     // Bit/pin      7   6   5   4   3   2   1   0
     // Signal       BL  D7  D6  D5  D4  E   RS  n.c.
-    uint8_t bits(uint8_t d4, uint8_t e, uint8_t rs) const {
-        return (_bl | ((d4) << 3) | ((e) << 2) | ((rs) << 1));
+    uint8_t force_inline bits(uint8_t nybble, uint8_t e, uint8_t rs) const {
+        return (_bl | ((nybble) << 3) | ((e) << 2) | ((rs) << 1));
     }
 private:
     Display(const Display&);
