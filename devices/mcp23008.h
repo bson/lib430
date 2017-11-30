@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+#define MCP28008_ADDR  (0x20)
+
 namespace mcp23008 {
 
 template <typename Bus, typename Device>

@@ -86,15 +86,11 @@ public:
 
     // Start/end probe cycle
     void start_probe() { _state = PROBING; }
-    void end_probe(bool success) { _state = success ? ATTACHED : UNATTACHED; }
+    void end_probe(bool success) { _state = (success ? ATTACHED : UNATTACHED); }
 
     // Dummy probe to assume device is connected
     void dummy_probe() {
-        if (state() != UNATTACHED)
-            return;
-
-        start_probe();
-        end_probe(true);
+        _state = ATTACHED;
     }
 
     // Begin a write transaction and write the first byte.

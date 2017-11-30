@@ -61,6 +61,14 @@ public:
         
     void init(bool backlight);
 
+    // Device probe
+    void probe() {
+    		if (Device::state() == Device::UNATTACHED) {
+    			Device::probe();
+        		init(_bl);
+    		}
+    }
+
     // Write value to controller register
     void write_reg(Register reg, uint8_t value);
 

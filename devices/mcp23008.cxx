@@ -14,7 +14,6 @@ void Expander<Bus,Device>::init() {
     Device::transmit(MCP23008_IOCON, 0b0010000);  // Set SEQOP
 }
 
-
 };
 
 #endif // _MAIN_

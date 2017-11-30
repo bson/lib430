@@ -33,8 +33,8 @@ bool I2CBus<USCI>::start_write(uint8_t addr, uint8_t data) {
         USCI::TXBUF = data;
 
         // Wait for slave ACK (TXSTT clears)
-        const uint32_t deadline = _sysTimer.ticks() + TIMER_MSEC(1);
-        while ((USCI::CTL1 & USCI::TXSTT) && _sysTimer.ticks() < deadline)
+        const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
+        while ((USCI::CTL1 & USCI::TXSTT) && !_sysTimer.due(deadline))
             ;
 
         if (!(USCI::CTL1 & USCI::TXSTT) && !(USCI::STAT & USCI::NACKIFG)) {
