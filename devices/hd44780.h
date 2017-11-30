@@ -9,8 +9,8 @@ template <typename Bus, typename Device, int LINEWIDTH=20>
 class Display: public Device {
     uint8_t _bl;                // 0x80 if backlight is off, 0 = on
 
-    enum { CMD_DELAY = 50,   // 50 usec delay after commands
-           DATA_DELAY= 50    // 50 usec delay after data
+    enum { CMD_DELAY = 10000,  // delay after commands in usec
+           DATA_DELAY= 50    // delay after data in usec
     };
 
     enum Register {
@@ -75,7 +75,7 @@ public:
     // Issue command (IR)
     void command(uint8_t cmd) {
         write_reg(IR, cmd);
-        //_timer.delay(USEC(CMD_DELAY));
+        _sysTimer.delay(TIMER_USEC(CMD_DELAY));
     }
 
     void clear() {
@@ -85,7 +85,7 @@ public:
 
     void home() {
         command(CMD_RETURNHOME);
-        _sysTimer.delay(TIMER_USEC(1500));
+        //_sysTimer.delay(TIMER_USEC(1500));
     }
 
     void setpos(uint8_t l, uint8_t p) {
@@ -96,7 +96,7 @@ public:
 
     void force_inline putc(char c) {
         write_reg(DR, (uint8_t)c);
-        //_timer.delay(USEC(LCD_DATA_DELAY));
+        //_sysTimer.delay(TIMER_USEC(DATA_DELAY));
     }
 
     void puts(const char* s) {
@@ -107,9 +107,9 @@ public:
 private:
   	// Maps values to GPIO pins
     // Bit/pin      7   6   5   4   3   2   1   0
-    // Signal       BL  D7  D6  D5  D4  E   RS  n.c.
-    uint8_t force_inline bits(uint8_t nybble, uint8_t e, uint8_t rs) const {
-        return (_bl | ((nybble) << 3) | ((e) << 2) | ((rs) << 1));
+    // Signal       BL  D7  D6  D5  D4  E   RS  RW=0
+    uint8_t force_inline bits(uint8_t nybble, uint8_t e, Register rs) const {
+        return _bl | ((nybble & 0xf) << 3) | (e << 2) | (uint8_t(rs) << 1);
     }
 private:
     Display(const Display&);

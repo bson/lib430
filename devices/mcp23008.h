@@ -3,7 +3,8 @@
 
 #include "common.h"
 
-#define MCP28008_ADDR  (0x20)
+#define MCP23008_ADDR(A0,A1,A2)  \
+	(0x20 | (A0) | ((A1) << 1) | ((A2) << 2))
 
 namespace mcp23008 {
 
@@ -39,11 +40,7 @@ public:
     // Implement write sequence so that bytes written appear on the
     // GPIO pin outputs.
     bool start_write(uint8_t data) {
-        if (Device::start_write(MCP23008_GPIO) && Device::write(data)) {
-            Device::write_done();
-            return true;
-        }
-        return false;
+        return Device::start_write(MCP23008_GPIO) && Device::write(data);
     }
                          
     bool write(uint8_t data) { return Device::write(data); }

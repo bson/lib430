@@ -24,7 +24,7 @@ namespace hd44780 {
 // Device init
 template <typename Bus, typename Device, int LINEWIDTH>
 void Disp::init(bool backlight) {
-    _bl   = backlight ? 0x80 : 0;
+    _bl   = 0x80; /* backlight ? 0x80 : 0; */
     
     Device::init();
 
@@ -51,11 +51,10 @@ void Disp::write_reg(Disp::Register reg, uint8_t value) {
     const uint8_t hi = value >> 4;
     const uint8_t lo = value & 0xf;
 
-    if (Device::start_write(bits(hi, 0, uint8_t(reg)))) { // E = lo
-        Device::write(bits(hi, 1, uint8_t(reg))); // E = hi
-        Device::write(bits(hi, 0, uint8_t(reg))); // E = lo
-        Device::write(bits(lo, 1, uint8_t(reg))); // E = hi
-        Device::write(bits(lo, 0, uint8_t(reg))); // E = lo
+    if (Device::start_write(bits(hi, 1, reg))) { // E = hi
+        Device::write(bits(hi, 0, reg)); // E = lo
+        Device::write(bits(lo, 1, reg)); // E = hi
+        Device::write(bits(lo, 0, reg)); // E = lo
         Device::write_done();
     }
 }
