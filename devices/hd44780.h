@@ -85,7 +85,7 @@ public:
 
     void home() {
         command(CMD_RETURNHOME);
-        //_sysTimer.delay(TIMER_USEC(1500));
+        // _sysTimer.delay(TIMER_USEC(1500));
     }
 
     void setpos(uint8_t l, uint8_t p) {
