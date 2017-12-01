@@ -5,11 +5,14 @@
 //   1 byte address with up to 3 bits of bank select in the control byte
 //      (slave low addr bits).
 //   16 byte page (not enforced)
+// A0-A2 pins not used.
 
 #include "common.h"
 
+// Initial underscore to avoid starting with digit
 #define _24LC04_ADDR 0xa0
 
+// 'n' in namespace is to avoid starting with digit.
 namespace n24lc04 {
 
 template <typename Bus, typename Device>

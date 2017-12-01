@@ -7,9 +7,11 @@
 
 #include "common.h"
 
+// Initial underscore to avoid starting with digit
 #define _24LC256_ADDR(A0,A1,A2) \
 	(0xa0 | (A0) | ((A1) << 1) | ((A2) << 2))
 
+// 'n' in namespace is to avoid starting with digit.
 namespace n24lc256 {
 
 template <typename Bus, typename Device>
