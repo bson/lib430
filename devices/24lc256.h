@@ -1,11 +1,12 @@
-#ifndef _24LC04_H_
-#define _24LC04_H_
+#ifndef _24LC256_H_
+#define _24LC256_H_
 
 #include "common.h"
 
-#define _24LC04_ADDR 0xa0
+#define _24LC256_ADDR(A0,A1,A2) \
+	(0xa0 | (A0) | ((A1) << 1) | ((A2) << 2))
 
-namespace n24lc04 {
+namespace n24lc256 {
 
 template <typename Bus, typename Device>
 class Eeprom: public Device {
@@ -19,19 +20,22 @@ public:
 
 	// Write single byte
 	void write(uint16_t loc, uint8_t data) {
-		Device::mask_addr(0x7, loc >> 8);
-		Device::transmit(loc, data);
+		if (Device::start_write(loc >> 8)) {
+			Device::write(loc);
+			Device::write(data);
+		}
 	}
 
-	// Write block of bytes. Up to 16 bytes within a 16-byte page.
+	// Write block of bytes. Up to 64 bytes within a 64-byte page.
 	void write_bytes(uint16_t loc, const uint8_t* data, size_t len) {
-		if (len == 1) {
+		if (--len == 0) {
 			write(loc, *data);
 			return;
 		}
 
-		Device::mask_addr(0x7, loc >> 8);
-		if (Device::start_write(loc)) {
+		if (Device::start_write(loc >> 8)) {
+			Device::write(loc);
+
 			while (--len > 0) {
 				Device::write(*data++);
 			}
@@ -41,8 +45,7 @@ public:
 
 	// Read single byte (random read).
 	bool read(uint16_t loc, uint8_t* data) {
-		Device::mask_addr(0x7, loc >> 8);
-		Device::transmit(loc);
+=		Device::transmit(loc >> 8, loc);
 		if (Device::start_read(data)) {
 			Device::read_done();
 			return true;
@@ -63,8 +66,7 @@ public:
 			return false;
 		}
 
-		Device::mask_addr(0x7, loc >> 8);
-		Device::transmit(loc);
+=		Device::transmit(loc >> 8, loc);
 		if (Device::start_read(data++)) {
 			while (--n > 0 && Device::read(data++))
 				;
@@ -76,6 +78,6 @@ public:
 	}
 };
 
-}; // namespace _24lc04
+}; // namespace _24lc256
 
-#endif // _24LC04_H_
+#endif // _24LC256_H_
