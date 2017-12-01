@@ -10,7 +10,7 @@
 #include "common.h"
 
 // Initial underscore to avoid starting with digit
-#define _24LC04_ADDR 0xa0
+#define _24LC04_ADDR 0x50
 
 // 'n' in namespace is to avoid starting with digit.
 namespace n24lc04 {
@@ -40,7 +40,7 @@ public:
 
 		Device::mask_addr(0x7, loc >> 8);
 		if (Device::start_write(loc)) {
-			while (--len > 0) {
+			while (len--) {
 				Device::write(*data++);
 			}
 			Device::write_done();
@@ -74,7 +74,7 @@ public:
 		Device::mask_addr(0x7, loc >> 8);
 		Device::transmit(loc);
 		if (Device::start_read(data++)) {
-			while (--n > 0 && Device::read(data++))
+			while (n-- && Device::read(data++))
 				;
 			Device::read_done();
 			len -= n;

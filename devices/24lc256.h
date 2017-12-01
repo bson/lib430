@@ -9,7 +9,7 @@
 
 // Initial underscore to avoid starting with digit
 #define _24LC256_ADDR(A0,A1,A2) \
-	(0xa0 | (A0) | ((A1) << 1) | ((A2) << 2))
+	(0x50 | (A0) | ((A1) << 1) | ((A2) << 2))
 
 // 'n' in namespace is to avoid starting with digit.
 namespace n24lc256 {
@@ -34,7 +34,7 @@ public:
 
 	// Write block of bytes. Up to 64 bytes within a 64-byte page.
 	void write_bytes(uint16_t loc, const uint8_t* data, size_t len) {
-		if (--len == 0) {
+		if (len == 1) {
 			write(loc, *data);
 			return;
 		}
@@ -42,7 +42,7 @@ public:
 		if (Device::start_write(loc >> 8)) {
 			Device::write(loc);
 
-			while (--len > 0) {
+			while (len--) {
 				Device::write(*data++);
 			}
 			Device::write_done();
@@ -51,7 +51,7 @@ public:
 
 	// Read single byte (random read).
 	bool read(uint16_t loc, uint8_t* data) {
-=		Device::transmit(loc >> 8, loc);
+		Device::transmit(loc >> 8, loc);
 		if (Device::start_read(data)) {
 			Device::read_done();
 			return true;
@@ -72,9 +72,9 @@ public:
 			return false;
 		}
 
-=		Device::transmit(loc >> 8, loc);
+		Device::transmit(loc >> 8, loc);
 		if (Device::start_read(data++)) {
-			while (--n > 0 && Device::read(data++))
+			while (n-- && Device::read(data++))
 				;
 			Device::read_done();
 			len -= n;
