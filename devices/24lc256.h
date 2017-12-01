@@ -1,6 +1,10 @@
 #ifndef _24LC256_H_
 #define _24LC256_H_
 
+// 24LC256 and similar EEPROMs:
+//   2 byte memory address with low slave addr bits from pins A0-A2
+//   64 byte page (not enforced)
+
 #include "common.h"
 
 #define _24LC256_ADDR(A0,A1,A2) \

@@ -1,6 +1,11 @@
 #ifndef _24LC04_H_
 #define _24LC04_H_
 
+// 24LC04 and similar EEPROMs:
+//   1 byte address with up to 3 bits of bank select in the control byte
+//      (slave low addr bits).
+//   16 byte page (not enforced)
+
 #include "common.h"
 
 #define _24LC04_ADDR 0xa0
