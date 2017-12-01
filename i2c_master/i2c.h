@@ -8,11 +8,6 @@ template <typename USCI>
 class I2CBus {
     const uint8_t _prescale;
 
-    enum {
-        SIG_TX = 1,
-        SIG_RX = 2
-    };
-
 public:
     I2CBus(uint8_t prescale)
         : _prescale(prescale) {
@@ -36,10 +31,10 @@ public:
     }
 
     // Start transaction.
-    bool start_read(uint8_t addr, uint8_t& val);
+    bool start_read(uint8_t addr, uint8_t* data);
 
     // Read byte
-    bool read(uint8_t& data);
+    bool read(uint8_t* data);
 
     // Done reading
     void read_done();
@@ -71,7 +66,7 @@ public:
     };
 
 private:
-    const uint8_t _addr;
+    uint8_t _addr;
     State _state;
 
 public:
@@ -122,7 +117,7 @@ public:
     // Write byte array
     void write_bytes(const uint8_t *data, size_t len);
 
-    bool start_read(uint8_t& data) {
+    bool start_read(uint8_t* data) {
         if (_state != UNATTACHED) {
             if (_i2c_bus_master.start_read(_addr, data)) {
                 return true;
@@ -133,7 +128,12 @@ public:
     }
 
     // Read byte
-    bool read(uint8_t& data);
+    bool read(uint8_t* data) {
+    		if (_state != UNATTACHED) {
+    			return _i2c_bus_master.read(data);
+    		}
+    		return false;
+    }
 
     // Read block.  Len should be the max length and is updated to reflect the number read.
     void read_bytes(uint8_t* data, size_t& len);
@@ -147,6 +147,11 @@ public:
 
     // Convenience function to send one or two bytes
     void transmit(uint8_t byte1, uint16_t byte2 = 0x100);
+
+    // For devices that need to use address bits, e.g. 24LCxxx
+    void force_inline mask_addr(uint8_t mask, uint8_t value) {
+    		_addr = (_addr & ~mask) | (value & mask);
+    }
 
 private:
     I2CDevice(const I2CDevice&);

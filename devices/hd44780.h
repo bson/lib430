@@ -9,7 +9,7 @@ template <typename Bus, typename Device, int LINEWIDTH=20>
 class Display: public Device {
     uint8_t _bl;                // 0x80 if backlight is off, 0 = on
 
-    enum { CMD_DELAY = 10000,  // delay after commands in usec
+    enum { CMD_DELAY = 1000,  // delay after commands in usec
            DATA_DELAY= 50    // delay after data in usec
     };
 
