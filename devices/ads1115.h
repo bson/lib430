@@ -3,6 +3,9 @@
 
 #include "common.h"
 
+// This assumes a grounded ADDR pin
+#define ADS1115_ADDR (0x48)
+
 namespace ads1115 {
 
 template <typename Bus, typename Device>
