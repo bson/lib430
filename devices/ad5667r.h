@@ -66,7 +66,10 @@ public:
     void init();
 
     // Install calibration table
-    void install_cal_table(uint8_t output, uint32_t *table);
+    void install_cal_table(uint8_t output, const uint32_t *table) {
+        _cal_table[output] = table;
+        _bad_cal[output]   = false;
+    }
 
     // True if calibration data is good
     bool cal_good() const { return !(_bad_cal[0] || _bad_cal[1]) };

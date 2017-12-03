@@ -48,7 +48,7 @@ uint16_t DAC<Bus,Device,NBITS>::cal_correct(uint8_t output, uint16_t value) cons
     uint32_t v = uint32_t(value) << 16;
     uint16_t bits = 0;
     uint16_t mask = 1U << 15;
-    for (uint n = 0; n < (NBITS-1); ++n) {
+    for (uint n = 0; n < NBITS; ++n) {
         if (v >= table[n]) {
             bits |= mask;
             v -= table[n];
@@ -56,14 +56,6 @@ uint16_t DAC<Bus,Device,NBITS>::cal_correct(uint8_t output, uint16_t value) cons
         mask >>= 1;
     }
     return bits;
-}
-
-template <typename Bus, typename Device, int NBITS>
-void DAC<Bus,Device,NBITS>::install_cal_table(uint8_t output, uint32_t *table) {
-    // TODO - validate cal table.  Maybe put the checksum at the bit 0 position.
-
-    _cal_table[output] = table;
-    _bad_cal[output]   = false;
 }
 
 }; // namespace ad5667r
