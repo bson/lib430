@@ -18,6 +18,8 @@ namespace n24lc04 {
 template <typename Bus, typename Device>
 class Eeprom: public Device {
 public:
+	enum { PAGESIZE = 16 };
+
 	Eeprom(Bus& bus, uint8_t addr)
 		: Device(bus, addr) {
 	}
@@ -32,7 +34,7 @@ public:
 	}
 
 	// Write block of bytes. Up to 16 bytes within a 16-byte page.
-	void write_bytes(uint16_t loc, const uint8_t* data, size_t len) {
+	void write_bytes(uint16_t loc, const uint8_t* data, uint8_t len) {
 		if (len == 1) {
 			write(loc, *data);
 			return;
@@ -44,6 +46,19 @@ public:
 				Device::write(*data++);
 			}
 			Device::write_done();
+		}
+	}
+
+	// Write a large block, potentially greater than a page.  Loc must be on
+	// a page boundary.
+	void write_pages(uint16_t loc, const uint8_t* data, size_t len) {
+		while (len > PAGESIZE) {
+			write_bytes(loc, data, PAGESIZE);
+			data += PAGESIZE;
+			len -= PAGESIZE;
+		}
+		if (len) {
+			write_bytes(loc, data, len & 0xff);
 		}
 	}
 
@@ -81,6 +96,22 @@ public:
 			return true;
 		}
 		return false;
+	}
+
+	// Read multiple pages, reading exactly len bytes.
+	bool read_pages(uint16_t loc, uint8_t *data, size_t len) {
+		while (len > PAGESIZE) {
+			size_t nread = PAGESIZE;
+			if (!read_bytes(loc, data, nread) || nread != PAGESIZE)
+				return false;
+			len -= nread;
+		}
+		if (len) {
+			size_t nread = len;
+			if (!read_bytes(loc, data, nread) || nread != len)
+				return false;
+		}
+		return true;
 	}
 };
 
