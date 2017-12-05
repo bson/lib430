@@ -8,7 +8,7 @@
 
 namespace mcp23008 {
 
-template <typename Bus, typename Device>
+template <typename Device>
 class Expander: public Device {
 public:
     enum { MCP23008_IODIR  = 0x00,
@@ -24,8 +24,8 @@ public:
            MCP23008_OLAT   = 0x0A
     };
 
-    Expander(Bus& bus, uint8_t addr)
-        : Device(bus, addr) {
+    Expander(uint8_t addr)
+        : Device(addr) {
     }
 
     void probe() {

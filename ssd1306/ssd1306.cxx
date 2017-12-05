@@ -10,7 +10,6 @@
 
 // Realize code for I2C based device
 #include "i2c_master/i2c.h"
-template class ssd1306::Panel<I2CBus<UCB0>, I2CDevice<UCB0> >;
 
 namespace rune_defs {
 #include "ssd1306/font/runes.inc"

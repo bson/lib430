@@ -6,8 +6,8 @@
 
 #pragma CHECK_ULP("none")
 
-template <typename USCI>
-void I2CBus<USCI>::init() {
+template <typename USCI, uint32_t _SPEED>
+void I2CBus<USCI,_SPEED>::init() {
     // Initialize
     USCI::CTL1 |= USCI::SWRST;
     USCI::CTL1 &= ~USCI::SWRST;
@@ -15,12 +15,12 @@ void I2CBus<USCI>::init() {
     USCI::CTL0 = USCI::MODE_3 | USCI::SYNC | USCI::MST;
     USCI::CTL1 = USCI::SSEL_2;   // SMCLK
 
-    USCI::BR0   = _prescale;
-    USCI::BR1   = _prescale >> 8;
+    USCI::BR0   = PRESCALE;
+    USCI::BR1   = PRESCALE >> 8;
 }
 
-template <typename USCI>
-bool I2CBus<USCI>::start_write(uint8_t addr, uint8_t data) {
+template <typename USCI, uint32_t _SPEED>
+bool I2CBus<USCI,_SPEED>::start_write(uint8_t addr, uint8_t data) {
     for (int tries = 0; tries < 3; ++tries) {
         init();
 
@@ -50,8 +50,8 @@ bool I2CBus<USCI>::start_write(uint8_t addr, uint8_t data) {
     return false;
 }
 
-template <typename USCI>
-bool I2CBus<USCI>::write(uint8_t data) {
+template <typename USCI, uint32_t _SPEED>
+bool I2CBus<USCI,_SPEED>::write(uint8_t data) {
     if (!wait_tx())
         return false;
 
@@ -59,22 +59,23 @@ bool I2CBus<USCI>::write(uint8_t data) {
     return true;
 }
 
-template <typename USCI>
-void I2CBus<USCI>::write_done() {
-
+template <typename USCI, uint32_t _SPEED>
+void I2CBus<USCI,_SPEED>::write_done() {
     (void)wait_tx();
 
     // Send stop
     USCI::CTL1 |= USCI::TXSTP;
 
+    // XXX can we tell when the stop is done?
+
     // Needed to keep the next start_write from terminating this.  At 100kHz
     // wait 100us.  At 400kHz wait 25us.
-    _sysTimer.delay(TIMER_USEC(100*100000/I2C_BUS_SPEED));
+    _sysTimer.delay(TIMER_USEC(100*100000/_SPEED));
 }
 
 // * private
-template <typename USCI>
-bool I2CBus<USCI>::wait_tx() {
+template <typename USCI, uint32_t _SPEED>
+bool I2CBus<USCI,_SPEED>::wait_tx() {
     if (USCI::CPU_IFG & USCI::TXIFG) {
         return true;
     }
@@ -90,13 +91,13 @@ bool I2CBus<USCI>::wait_tx() {
 }
 
 // * private
-template <typename USCI>
-void I2CBus<USCI>::bus_reset() {
+template <typename USCI, uint32_t _SPEED>
+void I2CBus<USCI,_SPEED>::bus_reset() {
     ;
 }
 
-template <typename USCI>
-bool I2CBus<USCI>::start_read(uint8_t slave, uint8_t* data) {
+template <typename USCI, uint32_t _SPEED>
+bool I2CBus<USCI,_SPEED>::start_read(uint8_t slave, uint8_t* data) {
     for (int tries = 0; tries < 3; ++tries) {
         init();
 
@@ -123,8 +124,8 @@ bool I2CBus<USCI>::start_read(uint8_t slave, uint8_t* data) {
     return false;
 }
 
-template <typename USCI>
-bool I2CBus<USCI>::read(uint8_t* data) {
+template <typename USCI, uint32_t _SPEED>
+bool I2CBus<USCI,_SPEED>::read(uint8_t* data) {
     const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
     while (!(USCI::CPU_IFG & USCI::RXIFG)
     	       && !(USCI::STAT & USCI::NACKIFG)
@@ -139,25 +140,27 @@ bool I2CBus<USCI>::read(uint8_t* data) {
     return true;
 }
 
-template <typename USCI>
-void I2CBus<USCI>::read_done() {
+template <typename USCI, uint32_t _SPEED>
+void I2CBus<USCI,_SPEED>::read_done() {
     // Send stop
     USCI::CTL1 |= USCI::TXSTP;
+
+    // XXX is there a way to tell when this is done?
 }
 
-template <typename USCI>
-void I2CDevice<USCI>::write_bytes(const uint8_t *data, size_t len) {
+template <typename _Bus, typename USCI>
+void I2CDevice<_Bus,USCI>::write_bytes(const uint8_t *data, size_t len) {
     if (start_write(data[0])) {
         for (const uint8_t *p = data+1; p < data + len; ) {
             if (!write(*p++))
                 break;
         }
-        I2CDevice::write_done();
+        write_done();
     }
 }
 
-template <typename USCI>
-void I2CDevice<USCI>::read_bytes(uint8_t* data, size_t& len) {
+template <typename _Bus, typename USCI>
+void I2CDevice<_Bus,USCI>::read_bytes(uint8_t* data, size_t& len) {
 	size_t n = len;
 	if (start_read(data)) {
 		while (--n >= 0 && read(data++))
@@ -167,8 +170,8 @@ void I2CDevice<USCI>::read_bytes(uint8_t* data, size_t& len) {
 	}
 }
 
-template <typename USCI>
-void I2CDevice<USCI>::transmit(uint8_t byte1, uint16_t byte2) {
+template <typename _Bus, typename USCI>
+void I2CDevice<_Bus, USCI>::transmit(uint8_t byte1, uint16_t byte2) {
 	if (start_write(byte1)) {
 		if (byte2 != 0x100) {
 			write(byte2);

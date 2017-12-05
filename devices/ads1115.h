@@ -8,7 +8,7 @@
 
 namespace ads1115 {
 
-template <typename Bus, typename Device>
+template <typename Device>
 class ADC: public Device {
 public:
     enum Channel {
@@ -65,8 +65,8 @@ public:
 		CONF_COMP_QUE = 1   // 0:1
     };
 
-    ADC(Bus& bus, uint8_t addr)
-        : Device(bus, addr),
+    ADC(uint8_t addr)
+        : Device(addr),
           _config(0) {
     }
 

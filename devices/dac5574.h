@@ -5,11 +5,11 @@
 
 namespace dac5574 {
 
-template <typename Bus, typename Device>
+template <typename Device>
 class DAC: public Device {
 public:
-    DAC(Bus& bus, uint8_t addr)
-        : Device(bus, addr) {
+    DAC(uint8_t addr)
+        : Device(addr) {
     }
 
     void probe() { Device::dummy_probe(); }

@@ -5,7 +5,7 @@
 
 namespace hd44780 {
 
-template <typename Bus, typename Device, int LINEWIDTH=20>
+template <typename Device, int LINEWIDTH=20>
 class Display: public Device {
     uint8_t _bl;                // 0x80 if backlight is off, 0 = on
 
@@ -55,8 +55,8 @@ public:
            DOTS_5X8    = 0x00
     };
 
-    Display(Bus& bus, uint8_t addr) 
-        : Device(bus, addr) {
+    Display(uint8_t addr)
+        : Device(addr) {
     }
         
     void init(bool backlight);

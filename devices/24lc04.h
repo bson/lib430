@@ -15,13 +15,16 @@
 // 'n' in namespace is to avoid starting with digit.
 namespace n24lc04 {
 
-template <typename Bus, typename Device>
+template <typename Device>
 class Eeprom: public Device {
 public:
-	enum { PAGESIZE = 16 };
+	enum {
+		PAGESIZE = 16,
+		MAX_WRITE_TIME = 5    // in msec
+	};
 
-	Eeprom(Bus& bus, uint8_t addr)
-		: Device(bus, addr) {
+	Eeprom(uint8_t addr)
+		: Device(addr) {
 	}
 
 	void force_inline probe() { Device::dummy_probe(); }
@@ -33,7 +36,8 @@ public:
 		Device::transmit(loc, data);
 	}
 
-	// Write block of bytes. Up to 16 bytes within a 16-byte page.
+	// Write block of bytes. Up to 16 bytes within a 16-byte page.  Note that
+	// this doesn't wait for the write to finish.
 	void write_bytes(uint16_t loc, const uint8_t* data, uint8_t len) {
 		if (len == 1) {
 			write(loc, *data);
@@ -50,12 +54,18 @@ public:
 	}
 
 	// Write a large block, potentially greater than a page.  Loc must be on
-	// a page boundary.
+	// a page boundary.  Inserts a delay between writes.
 	void write_pages(uint16_t loc, const uint8_t* data, size_t len) {
 		while (len > PAGESIZE) {
 			write_bytes(loc, data, PAGESIZE);
 			data += PAGESIZE;
 			len -= PAGESIZE;
+			// XXX handle this instead by spending up to MAX_WRITE_TIME trying
+			// to read the page back, verifying it wrote correctly.  The read
+			// will fail until the write has finished.
+			if (len) {
+				_sysTimer.delay(TIMER_MSEC(MAX_WRITE_TIME));
+			}
 		}
 		if (len) {
 			write_bytes(loc, data, len & 0xff);
@@ -104,7 +114,7 @@ public:
 			size_t nread = PAGESIZE;
 			if (!read_bytes(loc, data, nread) || nread != PAGESIZE)
 				return false;
-			len -= nread;
+			len -= PAGESIZE;
 		}
 		if (len) {
 			size_t nread = len;

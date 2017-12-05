@@ -4,47 +4,43 @@
 #include "common.h"
 #include "cpu/g2553.h"
 
-template <typename USCI>
+template <typename USCI, uint32_t _SPEED>
 class I2CBus {
-    const uint8_t _prescale;
+public:
+    static void init();
 
 public:
-    I2CBus(uint8_t prescale)
-        : _prescale(prescale) {
-    }
+    enum { PRESCALE = SMCLK/_SPEED };
 
-    void init();
-
-public:
     // Begin a write transaction and write the first byte.
-    bool start_write(uint8_t addr, uint8_t data);
+    static bool start_write(uint8_t addr, uint8_t data);
 
     // Write additional bytes
-    bool write(uint8_t data);
+    static bool write(uint8_t data);
 
     // Done writing
-    void write_done();
+    static void write_done();
 
     // Check if bus is busy (has ongoing transaction).
-    uint8_t busy() {
+    static uint8_t busy() {
         return USCI::STAT & USCI::UBUSY;
     }
 
     // Start transaction.
-    bool start_read(uint8_t addr, uint8_t* data);
+    static bool start_read(uint8_t addr, uint8_t* data);
 
     // Read byte
-    bool read(uint8_t* data);
+    static bool read(uint8_t* data);
 
     // Done reading
-    void read_done();
+    static void read_done();
 
 private:
     // Wait for TXBUF ready.  Returns false on timeout or other error.
-    bool wait_tx();
+    static bool wait_tx();
     
     // Reset bus/master
-    void bus_reset();
+    static void bus_reset();
 
 private:
     I2CBus(const I2CBus&);
@@ -52,11 +48,8 @@ private:
 };
 
 
-// There's only a single bus, on UCB0, so use a global.
-extern class I2CBus<UCB0> _i2c_bus_master;
-
 // I2C device.
-template <typename USCI>
+template <typename _Bus, typename USCI>
 class I2CDevice {
 public:
     enum State {
@@ -70,8 +63,10 @@ private:
     State _state;
 
 public:
+    typedef _Bus Bus;
+
     // Single bus constructor uses global _i2c_bus_master.
-    I2CDevice(I2CBus<USCI>&, uint8_t slave_addr)
+    I2CDevice(uint8_t slave_addr)
         : _addr(slave_addr),
           _state(UNATTACHED) {
     }
@@ -91,7 +86,7 @@ public:
     // Begin a write transaction and write the first byte.
     bool start_write(uint8_t data) { 
         if (_state != UNATTACHED) {
-            if (_i2c_bus_master.start_write(_addr, data))
+            if (Bus::start_write(_addr, data))
                 return true;
 
             _state = UNATTACHED;
@@ -102,7 +97,7 @@ public:
     // Write additional bytes
     bool write(uint8_t data) {
         if (_state != UNATTACHED) {
-            return _i2c_bus_master.write(data);
+            return Bus::write(data);
         }
         return false;
     }
@@ -110,7 +105,7 @@ public:
     // Done writing
     void write_done() {
         if (_state != UNATTACHED) {
-            _i2c_bus_master.write_done();
+            Bus::write_done();
         }
     }
 
@@ -119,7 +114,7 @@ public:
 
     bool start_read(uint8_t* data) {
         if (_state != UNATTACHED) {
-            if (_i2c_bus_master.start_read(_addr, data)) {
+            if (Bus::start_read(_addr, data)) {
                 return true;
             }
             _state = UNATTACHED;
@@ -130,7 +125,7 @@ public:
     // Read byte
     bool read(uint8_t* data) {
     		if (_state != UNATTACHED) {
-    			return _i2c_bus_master.read(data);
+    			return Bus::read(data);
     		}
     		return false;
     }
@@ -141,7 +136,7 @@ public:
     // Read done, stop
     void read_done() {
         if (_state != UNATTACHED) {
-            _i2c_bus_master.read_done();
+            Bus::read_done();
         }
     }
 

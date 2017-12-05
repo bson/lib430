@@ -28,7 +28,7 @@
 
 namespace ad5667r {
 
-template <typename Bus, typename Device, int NBITS=16>
+template <typename Device, int NBITS=16>
 class DAC: public Device {
     enum { NCHANNELS = 2 };
 
@@ -47,8 +47,8 @@ public:
 		REFERENCE    = 0b111 << 3   // Internal reference enable/disable
     };
 
-    DAC(Bus& bus, uint8_t addr)
-        : Device(bus, addr) {
+    DAC(uint8_t addr)
+        : Device(addr) {
     		_cal_table[0] = _cal_table[1] = NULL;
     		_bad_cal[0] = _bad_cal[1] = false;
     }
@@ -77,15 +77,18 @@ public:
     // True if running calibrated on both channels
     bool calibrated() const { return _cal_table[0] && _cal_table[1]; }
 
-    // Sychronously change both outputs
+    // Synchronously change both outputs
     void update(uint16_t v0, uint16_t v1);
+
+    // Update single output with 32-bit Q5.27 value
+    void update32(uint8_t channel, uint32_t value);
 
     // Send command followed by 16 bits of parameters
     void command(uint8_t cmd, uint16_t data);
 
 protected:
     // Calibration correct value
-    uint16_t cal_correct(uint8_t output, uint16_t value) const;
+    uint16_t cal_correct(uint8_t output, uint32_t value) const;
 
 private:
     DAC(const DAC&);

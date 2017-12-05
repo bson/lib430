@@ -19,10 +19,10 @@
 
 namespace hd44780 {
 
-#define Disp Display<Bus,Device,LINEWIDTH>
+#define Disp Display<Device,LINEWIDTH>
 
 // Device init
-template <typename Bus, typename Device, int LINEWIDTH>
+template <typename Device, int LINEWIDTH>
 void Disp::init(bool backlight) {
     _bl   = 0x80; /* backlight ? 0x80 : 0; */
     
@@ -45,7 +45,7 @@ void Disp::init(bool backlight) {
 }
 
 // Write to register
-template <typename Bus, typename Device, int LINEWIDTH>
+template <typename Device, int LINEWIDTH>
 void Disp::write_reg(Disp::Register reg, uint8_t value) {
 
     const uint8_t hi = value >> 4;

@@ -15,11 +15,11 @@ namespace pcf8574 {
 // The PCF8574 is a simple device where anything written to it
 // shows up on the outputs, so it can transparently pass through
 // all writes.
-template <typename Bus, typename Device>
+template <typename Device>
 class Expander: public Device {
 public:
-    Expander(Bus& bus, uint8_t addr)
-        : Device(bus, addr) {
+    Expander(uint8_t addr)
+        : Device(addr) {
     }
 
     void probe() { Device::dummy_probe(); }

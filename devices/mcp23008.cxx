@@ -5,8 +5,8 @@
 
 namespace mcp23008 {
 
-template <typename Bus, typename Device>
-void Expander<Bus,Device>::init() {
+template <typename Device>
+void Expander<Device>::init() {
     // MCP23008 - set all pins to output, no pull-up, no interrupts
     Device::transmit(MCP23008_IODIR, 0);
     Device::transmit(MCP23008_IPOL, 0);
