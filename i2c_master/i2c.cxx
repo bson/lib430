@@ -66,7 +66,11 @@ void I2CBus<USCI,_SPEED>::write_done() {
     // Send stop
     USCI::CTL1 |= USCI::TXSTP;
 
-    wait_done();
+    // XXX Why doesn't this work?  It truncates transfers.
+    //wait_done();
+	const SysTimer::Future deadline = _sysTimer.future(TIMER_USEC(100*100000/_SPEED));
+	while (!_sysTimer.due(deadline))
+		;
 }
 
 // * private
