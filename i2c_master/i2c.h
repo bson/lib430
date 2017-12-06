@@ -26,8 +26,13 @@ public:
         return USCI::STAT & USCI::UBUSY;
     }
 
-    // Start transaction.
+    // Start read.
     static bool start_read(uint8_t addr, uint8_t* data);
+
+    // Switch from write to read (restart as read).  Unline start_read, this
+    // doesn't reset and reinitialize the USCI.  The address should probably
+    // identically match the write we're latching onto.
+    static bool restart_read(uint8_t addr, uint8_t* data);
 
     // Read byte
     static bool read(uint8_t* data);
@@ -35,9 +40,17 @@ public:
     // Done reading
     static void read_done();
 
-private:
-    // Wait for TXBUF ready.  Returns false on timeout or other error.
+    // Read last byte of a variable length transfer.  This leaves the
+    // last byte unacked and followed by a stop bit.  If it's acked the
+    // slave will keep transmitting, but the master will have stopped
+    // clocking causing the transaction to stall and never get to the
+    // stop.
+    static bool read_end(uint8_t* data);
+
+    // Wait for TXBUF or RXBIF ready.  Returns false on timeout or other error.
     static bool wait_tx();
+    static bool wait_rx();
+    static void wait_done();  // Wait for stop to be fully emitted
     
     // Reset bus/master
     static void bus_reset();
@@ -122,6 +135,18 @@ public:
         return false;
     }
 
+    	uint8_t force_inline getaddr() const { return _addr; }
+
+    bool restart_read(uint8_t* data) {
+    		if (_state != UNATTACHED) {
+    			if (Bus::restart_read(_addr, data)) {
+    				return true;
+    			}
+    			_state = UNATTACHED;
+    		}
+    		return false;
+    }
+
     // Read byte
     bool read(uint8_t* data) {
     		if (_state != UNATTACHED) {
@@ -140,12 +165,22 @@ public:
         }
     }
 
+    // Read last byte of a variable length read.  This results in a stop
+    // without ack after the last byte.
+    bool read_end(uint8_t* data) {
+        return _state != UNATTACHED && Bus::read_end(data);
+    }
+
     // Convenience function to send one or two bytes
     void transmit(uint8_t byte1, uint16_t byte2 = 0x100);
 
     // For devices that need to use address bits, e.g. 24LCxxx
     void force_inline mask_addr(uint8_t mask, uint8_t value) {
     		_addr = (_addr & ~mask) | (value & mask);
+    }
+
+    bool force_inline wait_write() {
+    		return Bus::wait_tx();
     }
 
 private:

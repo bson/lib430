@@ -38,7 +38,7 @@ public:
 	}
 
 	// Write block of bytes. Up to 64 bytes within a 64-byte page.
-	void write_bytes(uint16_t loc, const uint8_t* data, uint8_t len) {
+	bool write_bytes(uint16_t loc, const uint8_t* data, uint8_t len) {
 		if (len == 1) {
 			write(loc, *data);
 			return;
@@ -48,79 +48,63 @@ public:
 			Device::write(loc);
 
 			while (len--) {
-				Device::write(*data++);
+				if (!Device::write(*data++)) {
+					return false;
+				}
 			}
 			Device::write_done();
+			return true;
 		}
+		return false;
+
 	}
 
 	// Write a large block, potentially greater than a page.  Loc must be on
-	// a page boundary.
-	void write_pages(uint16_t loc, const uint8_t* data, size_t len) {
-		while (len > PAGESIZE) {
-			write_bytes(loc, data, PAGESIZE);
+	// a page boundary.  Inserts a delay between writes.
+	bool write_pages(uint16_t loc, const uint8_t* data, size_t len) {
+		while (len >= PAGESIZE) {
+			if (!write_bytes(loc, data, PAGESIZE)) {
+				return false;
+			}
+			loc += PAGESIZE;
 			data += PAGESIZE;
 			len -= PAGESIZE;
 			// XXX handle this instead by spending up to MAX_WRITE_TIME trying
 			// to read the page back, verifying it wrote correctly.  The read
 			// will fail until the write has finished.
-			if (len) {
-				_sysTimer.delay(TIMER_MSEC(MAX_WRITE_TIME));
-			}
+			_sysTimer.delay(TIMER_MSEC(MAX_WRITE_TIME+1));
 		}
 		if (len) {
-			write_bytes(loc, data, len & 0xff);
-		}
-	}
-
-	// Read single byte (random read).
-	bool read(uint16_t loc, uint8_t* data) {
-		Device::transmit(loc >> 8, loc);
-		if (Device::start_read(data)) {
-			Device::read_done();
-			return true;
-		}
-		return false;
-	}
-
-	// Read block of bytes.  len is the desired length and will be updated
-	// with length actually read.  Returns true on success.
-	// Random read.
-	bool read_bytes(uint16_t loc, uint8_t *data, size_t& len) {
-		size_t n = len;
-		if (--n == 0) {
-			if (read(loc, data)) {
-				len = 1;
-				return true;
+			if (!write_bytes(loc, data, len)) {
+				return false;
 			}
-			return false;
+			_sysTimer.delay(TIMER_MSEC(MAX_WRITE_TIME+1));
 		}
-
-		Device::transmit(loc >> 8, loc);
-		if (Device::start_read(data++)) {
-			while (n-- && Device::read(data++))
-				;
-			Device::read_done();
-			len -= n;
-			return true;
-		}
-		return false;
+		return true;
 	}
 
 	// Read multiple pages, reading exactly len bytes.
+	// XXX len must be 2 or more bytes
 	bool read_pages(uint16_t loc, uint8_t *data, size_t len) {
-		while (len > PAGESIZE) {
-			size_t nread = PAGESIZE;
-			if (!read_bytes(loc, data, nread) || nread != PAGESIZE)
-				return false;
-			len -= PAGESIZE;
+		if (len == 0) {
+			return true;
 		}
-		if (len) {
-			size_t nread = len;
-			if (!read_bytes(loc, data, nread) || nread != len)
-				return false;
+
+		if (!Device::start_write(loc >> 8) || !Device::write(loc)) {
+			return false;
 		}
-		return true;
+		if (Device::restart_read(data++)) {
+			--len;
+			while (len > 1) {
+				--len;
+				if (!Device::read(data++))
+					return false;
+			}
+		    Device::read_end(data++);
+		    --len;
+			return len == 0;
+		}
+		return false;
 	}
 };
 

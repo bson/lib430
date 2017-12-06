@@ -66,11 +66,7 @@ void I2CBus<USCI,_SPEED>::write_done() {
     // Send stop
     USCI::CTL1 |= USCI::TXSTP;
 
-    // XXX can we tell when the stop is done?
-
-    // Needed to keep the next start_write from terminating this.  At 100kHz
-    // wait 100us.  At 400kHz wait 25us.
-    _sysTimer.delay(TIMER_USEC(100*100000/_SPEED));
+    wait_done();
 }
 
 // * private
@@ -125,19 +121,58 @@ bool I2CBus<USCI,_SPEED>::start_read(uint8_t slave, uint8_t* data) {
 }
 
 template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::read(uint8_t* data) {
+bool I2CBus<USCI,_SPEED>::restart_read(uint8_t slave, uint8_t* data) {
+	if (!wait_tx()) {
+		return false;
+	}
+
+	USCI::CTL1 &= ~USCI::TR;    // receive mode
+	USCI::I2CSA = slave;
+
+	USCI::CTL1 |= USCI::TXSTT;     // send start
+
+	// Wait for slave ACK (TXSTT clears)
+	const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
+	while ((USCI::CTL1 & USCI::TXSTT) && !_sysTimer.due(deadline))
+		;
+
+	if (USCI::STAT & USCI::NACKIFG) {
+		// No ACK, fail
+		return false;
+	}
+
+	return read(data);
+}
+
+template <typename USCI, uint32_t _SPEED>
+bool I2CBus<USCI,_SPEED>::wait_rx() {
     const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
     while (!(USCI::CPU_IFG & USCI::RXIFG)
     	       && !(USCI::STAT & USCI::NACKIFG)
     		   && !_sysTimer.due(deadline))
     		;
 
-    if (!(USCI::CPU_IFG & USCI::RXIFG)) {
-    		return false;
-    }
+    return USCI::CPU_IFG & USCI::RXIFG;
+}
+
+template <typename USCI, uint32_t _SPEED>
+bool I2CBus<USCI,_SPEED>::read(uint8_t* data) {
+	if (!wait_rx())
+		return false;
 
     *data = USCI::RXBUF;
     return true;
+}
+
+template <typename USCI, uint32_t _SPEED>
+bool I2CBus<USCI,_SPEED>::read_end(uint8_t* data) {
+	// So we NACK-STOP instead of ACK this byte
+    USCI::CTL1 |= USCI::TXSTP;
+
+    const bool ok = read(data);
+    wait_done();
+
+    return ok;
 }
 
 template <typename USCI, uint32_t _SPEED>
@@ -145,7 +180,14 @@ void I2CBus<USCI,_SPEED>::read_done() {
     // Send stop
     USCI::CTL1 |= USCI::TXSTP;
 
-    // XXX is there a way to tell when this is done?
+    wait_done();
+}
+
+template <typename USCI, uint32_t _SPEED>
+void I2CBus<USCI,_SPEED>::wait_done() {
+	const SysTimer::Future deadline = _sysTimer.future(TIMER_USEC(100*100000/_SPEED));
+	while ((USCI::CPU_IFG & USCI::TXSTP) && !_sysTimer.due(deadline))
+		;
 }
 
 template <typename _Bus, typename USCI>
