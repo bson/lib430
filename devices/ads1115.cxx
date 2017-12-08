@@ -17,7 +17,7 @@ void ADC<Device>::start_single_read() {
 template <typename Device>
 bool ADC<Device>::wait_conv() {
 	static const uint8_t to[] = {1000/8, 1000/16, 1000/32, 1000/64, 1000/128,
-								1000/250, 1000/475, 1000/7};
+								1000/250, 1000/475, 1000/860};
 	uint8_t data_hi;
 	uint8_t data_lo;
 
@@ -51,6 +51,26 @@ uint16_t ADC<Device>::read_conv() {
 	return (data_hi << 8) | data_lo;
 }
 
+template <typename Device>
+uint32_t ADC<Device>::read_cal() {
+	uint16_t reading = read_conv();
+	if (!_cal_table) {
+		return uint32_t(reading) << 16;
+	}
+
+	uint32_t result = 0;
+	const uint32_t *table = _cal_table+1;
+
+	for (uint16_t mask = 1 << 15; mask; mask >>= 1) {
+		if (reading & mask) {
+			result += *table;
+		}
+		++table;
+	}
+	result -= _cal_table[0];
+
+	return result;
+}
 
 }; // namespace ads1115
 
