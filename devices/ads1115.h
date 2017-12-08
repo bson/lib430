@@ -10,6 +10,13 @@ namespace ads1115 {
 
 template <typename Device>
 class ADC: public Device {
+	// Device has only one converter, so only need one set of calibration
+	// data.  One table is used for values >= HI_CAL, one for smaller values.
+    const uint32_t *_cal_table_lo;
+    const uint32_t *_cal_table_hi;
+
+    enum { HI_CAL = 64 };
+
 public:
     enum Channel {
         // Channels
@@ -67,13 +74,21 @@ public:
 
     ADC(uint8_t addr)
         : Device(addr),
-          _config(0) {
+          _config(0),
+		  _cal_table_hi(NULL),
+		  _cal_table_lo(NULL) {
     }
 
     void probe() { Device::dummy_probe(); }
 
     // Pro forma
     void force_inline init() { }
+
+    // Install calibration table
+    void install_cal_table(const uint32_t *hi, const uint32_t *lo) {
+        _cal_table_hi = hi;
+        _cal_table_lo = lo;
+    }
 
     // Select input, gain, and SPS
     void config(Channel channel, FSR fsr, SPS sps) {
@@ -89,6 +104,9 @@ public:
 
     // Read conversion register
     uint16_t read_conv();
+
+    // Read conversion and correct for calibration
+    uint32_t read_cal();
 
 private:
     ADC(const ADC&);

@@ -54,12 +54,13 @@ uint16_t ADC<Device>::read_conv() {
 template <typename Device>
 uint32_t ADC<Device>::read_cal() {
 	uint16_t reading = read_conv();
-	if (!_cal_table) {
+	if (!_cal_table_hi || !_cal_table_hi) {
 		return uint32_t(reading) << 16;
 	}
 
 	uint32_t result = 0;
-	const uint32_t *table = _cal_table+1;
+	const uint32_t *cal_table = reading >= HI_CAL ? _cal_table_hi : _cal_table_lo;
+	const uint32_t *table = cal_table + 1;
 
 	for (uint16_t mask = 1 << 15; mask; mask >>= 1) {
 		if (reading & mask) {
@@ -67,7 +68,7 @@ uint32_t ADC<Device>::read_cal() {
 		}
 		++table;
 	}
-	result -= _cal_table[0];
+	result -= cal_table[0];
 
 	return result;
 }
