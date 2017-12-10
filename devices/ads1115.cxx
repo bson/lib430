@@ -62,7 +62,7 @@ uint32_t ADC<Device>::read_cal() {
 	const uint32_t *cal_table = reading >= HI_CAL ? _cal_table_hi : _cal_table_lo;
 	const uint32_t *table = cal_table + 1;
 
-	for (uint16_t mask = 1 << 15; mask; mask >>= 1) {
+	for (uint16_t mask = 1U << 15; mask; mask >>= 1) {
 		if (reading & mask) {
 			result += *table;
 		}

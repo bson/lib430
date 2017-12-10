@@ -29,17 +29,17 @@ public:
 	}
 
 	template <typename T_>
-	T force_inline mul<T_>(const T_& rhs) const {
+	Q force_inline mul(const T_& rhs) const {
 		return (T2(_val) * rhs._val) >> (sizeof rhs._val * 8);
 	}
 
 	template <typename T_>
-	T force_line div<T_>(const T_ rhs) const {
-		return (T2(_val) << (sizeof rhs._val * 8) / rhs._val;
+	Q force_inline div(const T_& rhs) const {
+		return (T2(_val) << (sizeof rhs._val * 8)) / rhs._val;
 	}
 
 	template <typename T_>
-	Q force_inline add<T_>(const T_ rhs) const { return Q(_val + rhs._val); }
+	Q force_inline add(const T_ rhs) const { return Q(_val + rhs._val); }
 
 	template <typename T_>
 	Q force_inline sub(const T_ rhs) const { return Q(_val - rhs._val); }

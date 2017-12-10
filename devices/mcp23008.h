@@ -47,7 +47,7 @@ public:
     void write_done() { Device::write_done(); }
 
     // Put one or two bytes on the GPIO outputs.
-    void transmit(uint8_t byte1, uint16_t byte2 = 0x100) {
+    bool transmit(uint8_t byte1, uint16_t byte2 = 0x100) {
         bool ok = false;
         if (start_write(byte2)) {
             ok = (byte2 == 0x100) || write(byte2);

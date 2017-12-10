@@ -33,7 +33,6 @@ class DAC: public Device {
     enum { NCHANNELS = 2 };
 
     const uint32_t *_cal_table[NCHANNELS];
-    bool _bad_cal[NCHANNELS];
 
 public:
     enum Command {
@@ -50,7 +49,6 @@ public:
     DAC(uint8_t addr)
         : Device(addr) {
     		_cal_table[0] = _cal_table[1] = NULL;
-    		_bad_cal[0] = _bad_cal[1] = false;
     }
 
     void probe() {
@@ -68,11 +66,7 @@ public:
     // Install calibration table
     void install_cal_table(uint8_t output, const uint32_t *table) {
         _cal_table[output] = table;
-        _bad_cal[output]   = false;
     }
-
-    // True if calibration data is good
-    bool cal_good() const { return !(_bad_cal[0] || _bad_cal[1]) };
 
     // True if running calibrated on both channels
     bool calibrated() const { return _cal_table[0] && _cal_table[1]; }
