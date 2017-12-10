@@ -40,6 +40,13 @@ public:
         : _time(f._time) {
         }
 
+        Future& operator=(const Future& f) {
+        		if (this != &f) {
+        			_time = f._time;
+        		}
+        		return *this;
+        }
+
         bool operator<(const Future& rhs) const {
             return int32_t(_time - rhs._time) < 0;
         }

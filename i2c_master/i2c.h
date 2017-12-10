@@ -4,12 +4,14 @@
 #include "common.h"
 #include "cpu/g2553.h"
 
-template <typename USCI, uint32_t _SPEED>
+template <typename _USCI, uint32_t _SPEED>
 class I2CBus {
 public:
     static void init();
 
 public:
+    typedef _USCI USCI;
+
     enum { PRESCALE = SMCLK/_SPEED };
 
     // Begin a write transaction and write the first byte.

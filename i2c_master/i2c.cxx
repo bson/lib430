@@ -6,8 +6,8 @@
 
 #pragma CHECK_ULP("none")
 
-template <typename USCI, uint32_t _SPEED>
-void I2CBus<USCI,_SPEED>::init() {
+template <typename _USCI, uint32_t _SPEED>
+void I2CBus<_USCI,_SPEED>::init() {
     // Initialize
     USCI::CTL1 |= USCI::SWRST;
     USCI::CTL1 &= ~USCI::SWRST;
@@ -19,8 +19,8 @@ void I2CBus<USCI,_SPEED>::init() {
     USCI::BR1   = PRESCALE >> 8;
 }
 
-template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::start_write(uint8_t addr, uint8_t data) {
+template <typename _USCI, uint32_t _SPEED>
+bool I2CBus<_USCI,_SPEED>::start_write(uint8_t addr, uint8_t data) {
     for (int tries = 0; tries < 3; ++tries) {
         init();
 
@@ -50,8 +50,8 @@ bool I2CBus<USCI,_SPEED>::start_write(uint8_t addr, uint8_t data) {
     return false;
 }
 
-template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::write(uint8_t data) {
+template <typename _USCI, uint32_t _SPEED>
+bool I2CBus<_USCI,_SPEED>::write(uint8_t data) {
     if (!wait_tx())
         return false;
 
@@ -59,8 +59,8 @@ bool I2CBus<USCI,_SPEED>::write(uint8_t data) {
     return true;
 }
 
-template <typename USCI, uint32_t _SPEED>
-void I2CBus<USCI,_SPEED>::write_done() {
+template <typename _USCI, uint32_t _SPEED>
+void I2CBus<_USCI,_SPEED>::write_done() {
     (void)wait_tx();
 
     // Send stop
@@ -74,8 +74,8 @@ void I2CBus<USCI,_SPEED>::write_done() {
 }
 
 // * private
-template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::wait_tx() {
+template <typename _USCI, uint32_t _SPEED>
+bool I2CBus<_USCI,_SPEED>::wait_tx() {
     if (USCI::CPU_IFG & USCI::TXIFG) {
         return true;
     }
@@ -91,13 +91,13 @@ bool I2CBus<USCI,_SPEED>::wait_tx() {
 }
 
 // * private
-template <typename USCI, uint32_t _SPEED>
-void I2CBus<USCI,_SPEED>::bus_reset() {
+template <typename _USCI, uint32_t _SPEED>
+void I2CBus<_USCI,_SPEED>::bus_reset() {
     ;
 }
 
-template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::start_read(uint8_t slave, uint8_t* data) {
+template <typename _USCI, uint32_t _SPEED>
+bool I2CBus<_USCI,_SPEED>::start_read(uint8_t slave, uint8_t* data) {
     for (int tries = 0; tries < 3; ++tries) {
         init();
 
@@ -124,8 +124,8 @@ bool I2CBus<USCI,_SPEED>::start_read(uint8_t slave, uint8_t* data) {
     return false;
 }
 
-template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::restart_read(uint8_t slave, uint8_t* data) {
+template <typename _USCI, uint32_t _SPEED>
+bool I2CBus<_USCI,_SPEED>::restart_read(uint8_t slave, uint8_t* data) {
 	if (!wait_tx()) {
 		return false;
 	}
@@ -148,8 +148,8 @@ bool I2CBus<USCI,_SPEED>::restart_read(uint8_t slave, uint8_t* data) {
 	return read(data);
 }
 
-template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::wait_rx() {
+template <typename _USCI, uint32_t _SPEED>
+bool I2CBus<_USCI,_SPEED>::wait_rx() {
     const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
     while (!(USCI::CPU_IFG & USCI::RXIFG)
     	       && !(USCI::STAT & USCI::NACKIFG)
@@ -159,8 +159,8 @@ bool I2CBus<USCI,_SPEED>::wait_rx() {
     return USCI::CPU_IFG & USCI::RXIFG;
 }
 
-template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::read(uint8_t* data) {
+template <typename _USCI, uint32_t _SPEED>
+bool I2CBus<_USCI,_SPEED>::read(uint8_t* data) {
 	if (!wait_rx())
 		return false;
 
@@ -168,8 +168,8 @@ bool I2CBus<USCI,_SPEED>::read(uint8_t* data) {
     return true;
 }
 
-template <typename USCI, uint32_t _SPEED>
-bool I2CBus<USCI,_SPEED>::read_end(uint8_t* data) {
+template <typename _USCI, uint32_t _SPEED>
+bool I2CBus<_USCI,_SPEED>::read_end(uint8_t* data) {
 	// So we NACK-STOP instead of ACK this byte
     USCI::CTL1 |= USCI::TXSTP;
 
@@ -179,16 +179,16 @@ bool I2CBus<USCI,_SPEED>::read_end(uint8_t* data) {
     return ok;
 }
 
-template <typename USCI, uint32_t _SPEED>
-void I2CBus<USCI,_SPEED>::read_done() {
+template <typename _USCI, uint32_t _SPEED>
+void I2CBus<_USCI,_SPEED>::read_done() {
     // Send stop
     USCI::CTL1 |= USCI::TXSTP;
 
     wait_done();
 }
 
-template <typename USCI, uint32_t _SPEED>
-void I2CBus<USCI,_SPEED>::wait_done() {
+template <typename _USCI, uint32_t _SPEED>
+void I2CBus<_USCI,_SPEED>::wait_done() {
 	const SysTimer::Future deadline = _sysTimer.future(TIMER_USEC(100*100000/_SPEED));
 	while ((USCI::CPU_IFG & USCI::TXSTP) && !_sysTimer.due(deadline))
 		;

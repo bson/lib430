@@ -54,10 +54,10 @@ T& min(const T& a, const T& b) {
 }
 
 template <typename T>
-static inline T swap(T& a, T& b) {
+static inline T swap(T& a, const T& b) {
     T tmp = a;
     a = b;
-    return a;
+    return tmp;
 }
 
 #endif // _COMMON_H_
