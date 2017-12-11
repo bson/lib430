@@ -65,6 +65,11 @@ public:
         while (*s) 
             putc(*s++);
     }
+    void putln(const char* s) {
+    		puts(s);
+    		putc('\n');
+    }
+
     bool read_ready() { return USCI::CPU_IFG2 & USCI::RXIFG; }
     uint8_t read() { return USCI::RXBUF; }
 };

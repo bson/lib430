@@ -53,9 +53,12 @@ uint16_t ADC<Device>::read_conv() {
 
 template <typename Device>
 uint32_t ADC<Device>::read_cal() {
-	uint16_t reading = read_conv();
+	const uint16_t reading = read_conv();
 	if (!_cal_table_hi || !_cal_table_hi) {
 		return uint32_t(reading) << 16;
+	}
+	if (reading == 0x7fff) {
+		return ~0UL;
 	}
 
 	uint32_t result = 0;
