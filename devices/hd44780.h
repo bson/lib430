@@ -97,7 +97,7 @@ public:
     // Enable/disable cursor
     void cursor(bool state) {
     		if (state) {
-    			command(CMD_DISPLAYCONTROL | DISPLAYON | CURSORON | BLINKON);
+    			command(CMD_DISPLAYCONTROL | DISPLAYON | CURSORON | BLINKOFF);
     		} else {
     			command(CMD_DISPLAYCONTROL | DISPLAYON | CURSOROFF | BLINKOFF);
     		}
