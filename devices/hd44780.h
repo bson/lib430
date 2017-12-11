@@ -94,6 +94,15 @@ public:
         command(CMD_SETDDRAMADDR | (addr[l] + p));
     }
 
+    // Enable/disable cursor
+    void cursor(bool state) {
+    		if (state) {
+    			command(CMD_DISPLAYCONTROL | DISPLAYON | CURSORON | BLINKON);
+    		} else {
+    			command(CMD_DISPLAYCONTROL | DISPLAYON | CURSOROFF | BLINKOFF);
+    		}
+    }
+
     void force_inline putc(char c) {
         write_reg(DR, (uint8_t)c);
         //_sysTimer.delay(TIMER_USEC(DATA_DELAY));
