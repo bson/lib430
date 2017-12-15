@@ -6,7 +6,7 @@
 namespace ads1115 {
 
 template <typename Device>
-void ADC<Device>::start_single_read() {
+void ADC<Device>::start_single_conv() {
     if (Device::start_write(REG_CONF)) {
         Device::write((_config >> 8) | 0x81);  // Bit 8 => single shot conversion
         Device::write(_config & 0xff);

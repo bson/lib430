@@ -108,6 +108,11 @@ public:
     		PORT::P_IE  |= MASK;
     };
 
+    // Simply enable without affecting edge sense
+    static force_inline void enable_int() {
+    		PORT::P_IE  |= MASK;
+    }
+
     // Disable pin interrupt
     static force_inline void disable_int() {
     		PORT::P_IE  &= ~MASK;

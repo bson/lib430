@@ -96,8 +96,8 @@ public:
         _config = ((channel | 0b100) << 12) | (fsr << 9) | (_sps << 5);
     }
 
-    // Start one-shot read
-    void start_single_read();
+    // Start one-shot conversion
+    void start_single_conv();
 
     // Wait for conversion done
     bool wait_conv();
