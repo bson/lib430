@@ -1,10 +1,10 @@
 #ifndef _USCI_B_H_
 #define _USCI_B_H_
 
-#include <msp430.h>
 #include <stdint.h>
 #include <stddef.h>
 
+#include "common.h"
 #include "accessors.h"
 
 template <volatile uint8_t& _STAT,

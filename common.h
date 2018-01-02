@@ -1,9 +1,7 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-namespace msp430 {
 #include <msp430.h>
-};
 
 #include <stdint.h>
 #include <stddef.h>

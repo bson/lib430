@@ -87,7 +87,7 @@ public:
 
     // Configure
     static void config(Direction dir,
-    				      Select sel,
+    				      Select sel = IO_PIN,
 				      Pullup ren = NO_RESISTOR) {
         PORT::P_DIR  = (PORT::P_DIR  & ~MASK) | uint8_t(dir);
         PORT::P_SEL  = (PORT::P_SEL  & ~MASK) | ((uint8_t(sel) & 1) << _BIT);

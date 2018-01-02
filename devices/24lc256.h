@@ -41,7 +41,7 @@ public:
 	bool write_bytes(uint16_t loc, const uint8_t* data, uint8_t len) {
 		if (len == 1) {
 			write(loc, *data);
-			return;
+			return true;
 		}
 
 		if (Device::start_write(loc >> 8)) {

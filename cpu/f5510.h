@@ -8,58 +8,58 @@
 #include "gpio.h"
 
 // Two TimerA's
-typedef TimerA3<msp430::TA0CTL, msp430::TA0R, msp430::TA0CCTL0,
-                msp430::TA0CCR0, msp430::TA0CCTL1, msp430::TA0CCR1,
-                msp430::TA0CCTL2, msp430::TA0CCR2, msp430::TA0IV,
+typedef TimerA3<TA0CTL, TA0R, TA0CCTL0,
+                TA0CCR0, TA0CCTL1, TA0CCR1,
+                TA0CCTL2, TA0CCR2, TA0IV,
                 TIMER0_A0_VECTOR, TIMER0_A1_VECTOR> TimerA3_0;
 
-typedef TimerA3<msp430::TA1CTL, msp430::TA1R, msp430::TA1CCTL0,
-                msp430::TA1CCR0, msp430::TA1CCTL1, msp430::TA1CCR1,
-                msp430::TA1CCTL2, msp430::TA1CCR2, msp430::TA1IV,
+typedef TimerA3<TA1CTL, TA1R, TA1CCTL0,
+                TA1CCR0, TA1CCTL1, TA1CCR1,
+                TA1CCTL2, TA1CCR2, TA1IV,
                 TIMER1_A0_VECTOR, TIMER1_A1_VECTOR> TimerA3_1;
+
+typedef TimerA3<TA2CTL, TA2R, TA2CCTL0,
+                TA2CCR0, TA2CCTL1, TA2CCR1,
+                TA2CCTL2, TA2CCR2, TA2IV,
+                TIMER1_A0_VECTOR, TIMER1_A1_VECTOR> TimerA3_2;
 
 // System needs a timer someplace.
 typedef TimerA3_0 SysTimer;
 extern SysTimer _sysTimer;
 
+extern volatile uint8_t _dummy_byte;
+
 // UCSI_A1
-typedef UCA<msp430::UCA1STAT, msp430::UCA1CTL0, msp430::UCA1CTL1,
-            msp430::UCA1MCTL, msp430::UCA1BR0, msp430::UCA1BR1,
-            msp430::UCA1RXBUF, msp430::UCA1TXBUF, msp430::UCA1ABCTL,
-            msp430::UCA1IRTCTL, msp430::UCA1IRRCTL, msp430::IE2,
-            msp430::IFG2, UCA1RXIE, UCA1TXIE, UCA1RXIFG, UCA1TXIFG> UCSI_A1;
+typedef UCA<UCA1STAT, UCA1CTL0, UCA1CTL1,
+            UCA1MCTL, UCA1BR0, UCA1BR1,
+            UCA1RXBUF, UCA1TXBUF, UCA1ABCTL,
+            UCA1IRTCTL, UCA1IRRCTL, UCA1IE,
+            UCA1IFG, UCRXIE, UCTXIE, UCRXIFG, UCTXIFG> UCSI_A1;
 
 // UCSI_B1
-typedef UCB<msp430::UCB1STAT, msp430::UCB1CTL0, msp430::UCB1CTL1,
-            msp430::UCB1BR0, msp430::UCB1BR1, msp430::UCB1I2CIE,
-            msp430::UCB1RXBUF, msp430::UCB1TXBUF, msp430::UCB1I2COA,
-            msp430::UCB1I2CSA, msp430::UC0IFG, UCB1TXIFG, UCB1RXIFG> UCSI_B1;
+typedef UCB<UCB1STAT, UCB1CTL0, UCB1CTL1,
+            UCB1BR0, UCB1BR1, UCB1IE,
+            UCB1RXBUF, UCB1TXBUF, UCB1I2COA,
+            UCB1I2CSA, UCB1IFG, UCTXIFG, UCRXIFG> UCSI_B1;
 
 // P1-P6 (not all pins exist externally)
-typedef Port<msp430::P1IN, msp430::P1OUT, msp430::P1DIR, msp430::P1SEL,
-             msp430::P1SEL2, msp430::P1REN, msp430::P1IFG, msp430::P1IES,
-             msp430::P1IE> Port1;
+typedef Port<P1IN, P1OUT, P1DIR, P1SEL,
+            _dummy_byte, P1REN, P1IFG, P1IES,
+            P1IE> Port1;
 
-typedef Port<msp430::P2IN, msp430::P2OUT, msp430::P2DIR, msp430::P2SEL,
-             msp430::P2SEL2, msp430::P2REN, msp430::P2IFG, msp430::P2IES,
-             msp430::P2IE> Port2;
+typedef Port<P2IN, P2OUT, P2DIR, P2SEL, _dummy_byte, P2REN, P2IFG, P2IES,
+             P2IE> Port2;
 
-typedef Port<msp430::P3IN, msp430::P3OUT, msp430::P3DIR, msp430::P3SEL,
-             msp430::P3SEL3, msp430::P3REN, msp430::P3IFG, msp430::P3IES,
-             msp430::P3IE> Port3;
+typedef Port<P3IN, P3OUT, P3DIR, P3SEL, _dummy_byte, P3REN,
+             _dummy_byte, _dummy_byte, _dummy_byte> Port3;
 
-typedef Port<msp430::P4IN, msp430::P4OUT, msp430::P4DIR, msp430::P4SEL,
-             msp430::P4SEL4, msp430::P4REN, msp430::P4IFG, msp430::P4IES,
-             msp430::P4IE> Port4;
+typedef Port<P4IN, P4OUT, P4DIR, P4SEL, _dummy_byte, P4REN,
+             _dummy_byte, _dummy_byte, _dummy_byte> Port4;
 
-typedef Port<msp430::P5IN, msp430::P5OUT, msp430::P5DIR, msp430::P5SEL,
-             msp430::P5SEL5, msp430::P5REN, msp430::P5IFG, msp430::P5IES,
-             msp430::P5IE> Port5;
+typedef Port<P5IN, P5OUT, P5DIR, P5SEL, _dummy_byte, P5REN,
+             _dummy_byte, _dummy_byte, _dummy_byte> Port5;
 
-typedef Port<msp430::P6IN, msp430::P6OUT, msp430::P6DIR, msp430::P6SEL,
-             msp430::P6SEL6, msp430::P6REN, msp430::P6IFG, msp430::P6IES,
-             msp430::P6IE> Port6;
-
-extern volatile uint8_t _dummy_byte;
+typedef Port<P6IN, P6OUT, P6DIR, P6SEL, _dummy_byte, P6REN,
+             _dummy_byte, _dummy_byte, _dummy_byte> Port6;
 
 #endif // _F5510_H_
