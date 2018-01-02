@@ -2,7 +2,7 @@
 #define _I2C_H_
 
 #include "common.h"
-#include "cpu/g2553.h"
+#include "cpu/cpu.h"
 
 template <typename _USCI, uint32_t _SPEED>
 class I2CBus {

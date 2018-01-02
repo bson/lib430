@@ -13,7 +13,7 @@
 #ifdef _MAIN_
 
 #include "common.h"
-#include "cpu/g2553.h"
+#include "cpu/cpu.h"
 #include "timer.h"
 #include "hd44780.h"
 
