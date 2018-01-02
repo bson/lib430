@@ -7,7 +7,8 @@
 #include "usci_b.h"
 #include "gpio.h"
 
-// Two TimerA's
+// 3x TimerA, 1x TimerB
+// A and B differ in the number of CCR registers; TimerB has 8, plus an expansion register.
 typedef TimerA3<TA0CTL, TA0R, TA0CCTL0,
                 TA0CCR0, TA0CCTL1, TA0CCR1,
                 TA0CCTL2, TA0CCR2, TA0IV,
@@ -21,7 +22,12 @@ typedef TimerA3<TA1CTL, TA1R, TA1CCTL0,
 typedef TimerA3<TA2CTL, TA2R, TA2CCTL0,
                 TA2CCR0, TA2CCTL1, TA2CCR1,
                 TA2CCTL2, TA2CCR2, TA2IV,
-                TIMER1_A0_VECTOR, TIMER1_A1_VECTOR> TimerA3_2;
+                TIMER2_A0_VECTOR, TIMER2_A1_VECTOR> TimerA3_2;
+
+typedef TimerA3<TB0CTL, TB0R, TB0CCTL0,
+                TB0CCR0, TB0CCTL1, TB0CCR1,
+                TB0CCTL2, TB0CCR2, TB0IV,
+                TIMER0_B0_VECTOR, TIMER0_B1_VECTOR> TimerB_0;
 
 // System needs a timer someplace.
 typedef TimerA3_0 SysTimer;
