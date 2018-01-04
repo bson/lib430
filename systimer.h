@@ -55,8 +55,14 @@ public:
         Timer::set_counter(0, Timer::ENABLE_INTR, 0xf800);
     }
 
-    void delay(uint32_t ticks);
-    void wait(const Future& future);
+    void delay(uint32_t ticks) {
+        wait(future(ticks));
+    }
+
+    void wait(const Future& future) {
+        while (!due(future))
+            ;
+    }
 
     uint32_t ticks() const volatile {
         NoInterrupt g;

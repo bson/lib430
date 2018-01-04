@@ -3,17 +3,6 @@
 #include "common.h"
 #include "systimer.h"
 
-template <typename T>
-void SysTimerAB<T>::delay(uint32_t period)  {
-    wait(future(period));
-}
-
-template <typename T>
-void SysTimerAB<T>::wait(const SysTimerAB<T>::Future& future) {
-    while (!due(future))
-        ;
-}
-
 #if 1
 // SysTimer CCR0 interrupt
 void _intr_(SysTimer::Timer::VECTOR0)  SysTimer_ccr0_intr() {
