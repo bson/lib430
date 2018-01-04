@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "timer.h"
+#include "systimer.h"
 #include "usci_a.h"
 #include "usci_b.h"
 #include "gpio.h"
@@ -30,7 +31,7 @@ typedef TimerA3<TB0CTL, TB0R, TB0CCTL0,
                 TIMER0_B0_VECTOR, TIMER0_B1_VECTOR> TimerB_0;
 
 // System needs a timer someplace.
-typedef TimerA3_0 SysTimer;
+typedef SysTimerAB<TimerA3_0> SysTimer;
 extern SysTimer _sysTimer;
 
 extern volatile uint8_t _dummy_byte;
