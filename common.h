@@ -59,4 +59,6 @@ static inline T swap(T& a, const T& b) {
     return tmp;
 }
 
+#define NELEM(A) (sizeof(A) / sizeof(A[0]))
+
 #endif // _COMMON_H_

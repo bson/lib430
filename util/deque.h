@@ -3,6 +3,8 @@
 
 // Small, simple, static-storage deque that can be used for all sorts of simple
 // queues and buffers.  Capacity should be a power of two.
+// The operations are UNSAFE.  Make sure there's space and data available, or you
+// will get unpredictable results.
 
 template <typename T, int _CAP>
 class Deque {
@@ -26,79 +28,52 @@ public:
     // Space for more?
     bool space(uint8_t n = 1) const { return depth() <= _CAP - n; }
 
-    // Add to back, returns false if no room
-    bool push_back(const T& v) {
-        if (!space())
-            return false;
-
+    // Add to back
+    void push_back(const T& v) {
         _v[_tail++] = v;
         _tail %= _CAP;
-        return true;
     }
 
-    // Remove first item.  Returns false if empty, otherwise true.
-    bool pop_front(T& v) {
-        if (empty())
-            return false;
-
-        v = _v[_head++];
+    // Remove and return first item.
+    const T& pop_front() {
+        const T& v = _v[_head++];
         _head %= _CAP;
-        return true;
+        return v;
     }
 
-    // Add to front.  Returns false if no room.
-    bool push_front(const T& v) {
-        if (!space())
-            return false;
-
+    // Add to front.
+    void push_front(const T& v) {
         _v[(_head = (_head - 1) % _CAP)] = v;
-        return true;
     }
 
-    // Remove last item.  Returns false if empty, otherwise true.
-    bool pop_back(T& v) {
-        if (empty())
-            return false;
-
-        v = _v[(_tail = (_tail - 1) % _CAP)];
-        return true;
+    // Remove last item and reutrn.
+    const T& pop_back() {
+        return _v[(_tail = (_tail - 1) % _CAP)];
     }
 
     // Access/peek at nth item (0 - head), removing nothing
-    bool peek(T& v, int n = 0) const {
-        if (n > depth())
-            return false;
-        v = _v[(_head + n) % _CAP];
-        return true;
+    const T& peek(int n = 0) const {
+        return _v[(_head + n) % _CAP];
     }
 
-    // Copy in n items, appending to tail - mainly useful for buffers
-    bool copyin(const T& v[], int n) {
-        if (!space(n))
-            return false;
-
+    // Add n items, appending to tail - mainly useful for buffers
+    void append(const T& v[], int n) {
         for (int i = 0; i < n; i++) {
             _v[_tail++] = v[i];
             _tail %= _CAP;
         }
-        return true;
     }
 
-    // Copy out n items, removing from head
-    bool copyout(T& v[], int n) {
-        if (depth() < n)
-            return false;
-
+    // Pull out n items, removing from head
+    void pull(T& v[], int n) {
         for (int i = 0; i < n; i++) {
             v[i] = _v[_head++];
             _head %= _CAP;
         }
-        return true;
     }
 
-    // Remove up to n objects off front
-    void remove(int n) {
-        n = min<uint8_t>(n, depth());
+    // Remove n objects off front
+    void drop(int n) {
         _head = (_head + n) % _CAP;
     }
 };

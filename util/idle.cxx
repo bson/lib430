@@ -25,6 +25,9 @@ void Idle::work() {
 				// Important: run activity after calculations above
 				// so it can schedule itself
 				a->activate();
+
+				// Only run one activity per invocation
+				break;
 			}
 		}
 		_flags.in_work = false;

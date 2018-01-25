@@ -8,6 +8,26 @@
 
 #ifdef __MSP430_HAS_USB__
 
+const USB::DeviceDescriptor* USB::_dev_desc;
+const USB::ConfigDescriptor* USB::_conf_desc;
+const USB::InterfaceDescriptor* USB::_if_desc;
+const USB::EndpointDescriptor* USB::_ep_descs;
+uint8_t USB::_nep_descs;  // # of EP descriptors
+const char** USB::_strings;
+uint8_t USB::_nstrings;
+
+uint16_t USB::_plldiv;
+
+volatile uint16_t USB::_events;  // Event mask
+
+volatile bool USB::_connected;
+volatile bool USB::_suspended;
+
+uintptr_t USB::_brk;
+uint8_t USB::_neps;     // Number of endpoint pairs
+uint8_t USB::_configured;
+uint8_t USB::_addr;     // Bus address 0-127
+
 void USB::init() {
     UnlockConf u;
 
@@ -343,13 +363,11 @@ void USB::setup_isr() {
 
 // Interrupt handler
 void _intr_(USB_UBM_VECTOR)  usb_intr() {
-    extern USB _usb;
-
     // Handle this up front so SETUPIFG isn't cleared on reading USBVECINT, since this
     // effectively ends the transaction.  For this reason, the setup command needs to
     // be handled in the ISR.
     if (USBIFG & SETUPIFG) {
-        _usb.setup_isr();
+        USB::setup_isr();
         USBIFG &= ~SETUPIFG;
     }
 
@@ -358,32 +376,32 @@ void _intr_(USB_UBM_VECTOR)  usb_intr() {
     while ((cause = USBVECINT) != USBVECINT_NONE) {
         switch (cause) {
         case USBVECINT_RSTR:
-            _usb.reset_isr();
+            USB::reset_isr();
             break;
         case USBVECINT_SUSR:
-            _usb.suspend_isr();
+            USB::suspend_isr();
             break;
         case USBVECINT_RESR:
-            _usb.resume_isr();
+            USB::resume_isr();
             break;
         case USBVECINT_PWR_DROP:
             // Disconnect?  Ignore.
             break;
         case USBVECINT_PWR_VBUSOn:
-            _usb.connect_isr();
+            USB::connect_isr();
             break;
         case USBVECINT_PWR_VBUSOff:
-            _usb.disconnect_isr();
+            USB::disconnect_isr();
             break;
         case USBVECINT_INPUT_ENDPOINT0:
-            _usb.input_isr(0);
+            USB::input_isr(0);
             break;
         case USBVECINT_OUTPUT_ENDPOINT0:
-            _usb.output_isr(0);
+            USB::output_isr(0);
             break;
         case USBVECINT_STPOW_PACKET_RECEIVED:
             // Got a setup while processing a setup... just handle it
-            _usb.setup_isr();
+            USB::setup_isr();
             break;
         default:
             if (cause >= USBVECINT_INPUT_ENDPOINT1 && cause <= USBVECINT_INPUT_ENDPOINT7) {
@@ -392,7 +410,7 @@ void _intr_(USB_UBM_VECTOR)  usb_intr() {
 
                 // Endpoint input
                 const uint16_t endpoint = (cause - USBVECINT_INPUT_ENDPOINT1) / 2;
-                _usb.input_isr(endpoint);
+                USB::input_isr(endpoint);
                 break;
             }
             if (cause >= USBVECINT_OUTPUT_ENDPOINT1 && cause <= USBVECINT_OUTPUT_ENDPOINT7) {
@@ -401,7 +419,7 @@ void _intr_(USB_UBM_VECTOR)  usb_intr() {
 
                 // Endpoint output
                 const uint16_t endpoint = (cause - USBVECINT_OUTPUT_ENDPOINT1) / 2;
-                _usb.output_isr(endpoint);
+                USB::output_isr(endpoint);
                 break;
             }
             // Ignore everything else

@@ -8,6 +8,9 @@
 //  One in+out endpoint pair per interface
 //  English language strings only
 
+// Everything is static as it's assumed there's only one USB controller.
+// However, member-style access is used wherever feasible so the code isn't
+// dependent on this - it's purely an optimization to eliminate the this ptr.
 
 #include "common.h"
 #include "config.h"
@@ -176,27 +179,25 @@ public:
     };
 
 private:
-    const DeviceDescriptor* _dev_desc;
-    const ConfigDescriptor* _conf_desc;
-    const InterfaceDescriptor* _if_desc;
-    const EndpointDescriptor* _ep_descs;
-    const uint8_t _nep_descs;  // # of EP descriptors
-    const char** _strings;
-    const uint8_t _nstrings;
+    static const DeviceDescriptor* _dev_desc;
+    static const ConfigDescriptor* _conf_desc;
+    static const InterfaceDescriptor* _if_desc;
+    static const EndpointDescriptor* _ep_descs;
+    static uint8_t _nep_descs;  // # of EP descriptors
+    static const char** _strings;
+    static uint8_t _nstrings;
 
-    const uint16_t _plldiv;
+    static uint16_t _plldiv;
 
-    volatile uint16_t _events;  // Event mask
+    static volatile uint16_t _events;  // Event mask
 
-    volatile bool _connected;
-    volatile bool _connect_change;
-    volatile bool _suspended;
-    volatile bool _suspend_change;
+    static volatile bool _connected;
+    static volatile bool _suspended;
 
-    uintptr_t _brk;
-    uint8_t _neps;     // Number of endpoint pairs
-    uint8_t _configured;
-    uint8_t _addr;     // Bus address 0-127
+    static uintptr_t _brk;
+    static uint8_t _neps;     // Number of endpoint pairs
+    static uint8_t _configured;
+    static uint8_t _addr;     // Bus address 0-127
 
 public:
     USB(const DeviceDescriptor* dev,
@@ -207,28 +208,26 @@ public:
         const char** strs,
         uint8_t nstrs,
         uint16_t plldiv)
-        : _dev_desc(dev),
-          _conf_desc(conf),
-          _if_desc(if_),
-          _ep_descs(eps),
-          _nep_descs(neps),
-          _strings(strs),
-          _nstrings(nstrs),
-          _plldiv(plldiv),
-          _connected(false),
-          _connect_change(false),
-          _suspended(false),
-          _suspend_change(false),
-          _brk((uintptr_t)&USBSTABUFF),
-          _neps(0),
-          _configured(0),
-          _events(0)
+
     {
-        ;
+        _dev_desc = dev;
+        _conf_desc = conf;
+        _if_desc = if_;
+        _ep_descs = eps;
+        _nep_descs = neps;
+        _strings = strs;
+        _nstrings = nstrs;
+        _plldiv = plldiv;
+        _connected = false;
+        _suspended = false;
+        _brk = (uintptr_t)&USBSTABUFF;
+        _neps = 0;
+        _configured = 0;
+        _events = 0;
     }
 
     // Get next event, or 0 if none; removes event reuturned from pending set.
-    uint16_t pending_event() {
+    static uint16_t pending_event() {
        if (!_events)
             return 0;
 
@@ -240,80 +239,80 @@ public:
     }
 
     // Post an event.  Interrupts need to be disabled.
-    void post_event(uint16_t event) {
+    static void post_event(uint16_t event) {
         _events |= event;
     }
 
     // Initialize
-    void init();
-    void start() {
+    static void init();
+    static void start() {
         enable_pll();
     }
 
     // Enable an endpoint and allocate buffer for it
-    void add_endpoint(int n, uint16_t rxbuf_size, uint16_t txbuf_size);
+    static void add_endpoint(int n, uint16_t rxbuf_size, uint16_t txbuf_size);
 
     // Enable operation
-    void enable() { USBCTL |= FEN; }
+    static void enable() { USBCTL |= FEN; }
 
     // Write data to endpoint
-    void write(int n, const void* data, int len);
+    static void write(int n, const void* data, int len);
 
     // Read data from endpoint
-    void read(int n, void* data, int& len);
+    static void read(int n, void* data, int& len);
 
     // Respond with stall on endpoint N
-    void stall(int n);
+    static void stall(int n);
 
     // For application to handle SETUP
-    const SetupRequest* get_setup() {
+    static const SetupRequest* get_setup() {
         return (const SetupRequest*)&USBSUBLK;
     }
 
     // Simply ack endpoint N with a 0 byte data stage
-    void ack(int n) { write(n, NULL, 0); }
+    static void ack(int n) { write(n, NULL, 0); }
 
     // State inquiries
-    bool connected() const { return _connected; }
-    bool suspended() const { return _suspended; }
-    bool configured() const { return _configured; }
-    uint8_t addr() const { return _addr; }
+    static bool connected() { return _connected; }
+    static bool suspended() { return _suspended; }
+    static bool configured() { return _configured; }
+    static uint8_t addr() { return _addr; }
 
 // private:
     // These are called from an interrupt context.  They're public because TI's compiler is broken
     // and can't have an interrupt handler be a static class method.
-    void connect_isr() {
+    static void connect_isr() {
         _connected = true;
         _suspended = false;
         post_event(EVENT_CONNECT);
         post_event(EVENT_SUSPEND);
     }
 
-    void disconnect_isr() {
+    static void disconnect_isr() {
         _connected = false;
         post_event(EVENT_CONNECT);
         UnlockConf u;
         USBPLLCTL &= ~UPLLEN;
     }
 
-    void input_isr(uint16_t endpoint);
-    void output_isr(uint16_t endpoint);
-    void setup_isr();
-    void device_req_isr(const SetupRequest* setup);
-    void interface_req_isr(const SetupRequest* setup);
-    void endpoint_req_isr(const SetupRequest* setup);
+    static void input_isr(uint16_t endpoint);
+    static void output_isr(uint16_t endpoint);
+    static void setup_isr();
+    static void device_req_isr(const SetupRequest* setup);
+    static void interface_req_isr(const SetupRequest* setup);
+    static void endpoint_req_isr(const SetupRequest* setup);
 
-    void suspend_isr() {
+    static void suspend_isr() {
         _suspended = true;
         post_event(EVENT_SUSPEND);
         UnlockConf u;
         USBPLLCTL &= ~UPLLEN;
     }
-    void resume_isr() {
+    static void resume_isr() {
         _suspended = false;
         post_event(EVENT_SUSPEND);
     }
-    void reset_isr() {
+    static void reset_isr() {
         post_event(EVENT_RESET);
     }
 
@@ -324,18 +323,18 @@ private:
         ~UnlockConf() { USBKEYPID = ~0; }
     };
 
-    void disable_pll();
-    void enable_pll();
+    static void disable_pll();
+    static void enable_pll();
 
     // Allocate a buffer of length N
-    uintptr_t bufalloc(int n) {
+    static uintptr_t bufalloc(int n) {
         const uintptr_t result = _brk;
         _brk += n;
         return result;
     }
 
     // Return pointer to config for an endpoint.  DIR 0 = OUT
-    volatile uint8_t* get_conf(int dir, int n) {
+    static volatile uint8_t* get_conf(int dir, int n) {
         if (n == 0) {
             return dir ? &USBIEPCNF_0 : &USBOEPCNF_0;
         }
