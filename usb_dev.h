@@ -62,7 +62,7 @@ public:
     // Device descriptor
     struct DeviceDescriptor {
         uint8_t  length;    // sizeof(DeviceDescriptor)
-        uint8_t  type;      // 1 = device
+        uint8_t  type;      // TYPE_DEVICE
         uint16_t bcdusb;    // 0x0200 = 2.0 spec version in BCD
         uint8_t  devclass;  // Device class (USB org assigned)
         uint8_t  subclass;  // Sub class (USB org assigned)
@@ -80,7 +80,7 @@ public:
     // Configuration descriptor
     struct ConfigDescriptor {
         uint8_t  length;    // sizeof(ConfigDescriptor)
-        uint8_t  type;      // 2 = config
+        uint8_t  type;      // TYPE_CONFIG
         uint16_t total;     // total length including interfaces and enpoints
         uint8_t  numif;     // # of interfaces
         uint8_t  confval;   // 1 = config value
@@ -92,7 +92,7 @@ public:
     // Interface descriptor
     struct InterfaceDescriptor {
         uint8_t  length;    // sizeof(InterfaceDescriptor)
-        uint8_t  type;      // 4 = interface
+        uint8_t  type;      // TYPE_INTERFACE
         uint8_t  ifnum;     // interface number (zero based)
         uint8_t  alt;       // alternative setting (not used, zero)
         uint8_t  numep;     // Number of endpoints
@@ -105,11 +105,37 @@ public:
     // Endpoint descriptor
     struct EndpointDescriptor {
         uint8_t  length;     // sizeof(EndpointDescriptor)
-        uint8_t  type;       // 5 = endpoint
+        uint8_t  type;       // TYPE_ENDPOINT
         uint8_t  addr;       // Address (bit 7 = 0 for out, 1 for in)
         uint8_t  attr;       // Attribute bits
         uint16_t maxpkt;     // Max packet size
         uint8_t  interval;   // Polling interval in ms (2.0) or 0.125ms (2.0 HS)
+    };
+
+    // Endpoint attributes
+    enum {
+        // Transfer type
+        EP_ATTR_TTCONTROL = 0b00,
+        EP_ATTR_TTISO     = 0b01,  // Isochronous
+        EP_ATTR_TTBULK    = 0b10,  // Bulk
+        EP_ATTR_TTINTR    = 0b11,  // Interrupt
+
+        // Isochronous sync
+        EP_ATTR_ISONOSYNC = 0b0000,
+        EP_ATTR_ISOASYNC  = 0b0100,
+        EP_ATTR_ISOADAPT  = 0b1000,
+        EP_ATTR_ISOSYNC   = 0b1100,
+
+        // Isochronous usage mode
+        EP_ATTR_ISO_DATAEP = 0b000000, // Data EP
+        EP_ATTR_ISO_FBEP   = 0b010000, // Feedback EP
+        EP_ATTR_ISO_DFBEP  = 0b100000  // Data feedback EP
+    };
+
+    // Endpoint direction (for addr)
+    enum {
+        EP_ADDR_IN  = 0,
+        EP_ADDR_OUT = 0x80
     };
 
     // String descriptor (minus actual string)
@@ -133,8 +159,8 @@ public:
         EVENT_SUSPEND  = 2,     // Suspend/resume event
         EVENT_RESET    = 4,
         EVENT_CONFIG   = 8,     // Host configure
-        EVENT_SETUP    = 0x0a,  // Setup processed
-        EVENT_SETUPHK  = 0x0b,  // Unhandled setup in buffer
+        EVENT_SETUP    = 0x10,  // Setup processed
+        EVENT_SETUPHK  = 0x20,  // Unhandled setup in buffer
         EVENT_STALL    = 0x40,  // Stalled
         EVENT_SETADDR  = 0x80,  // Received set address
 
@@ -143,8 +169,10 @@ public:
         EVENT_EP2_OUT = 0x200,
         EVENT_EP3_OUT = 0x400,
         EVENT_EPx_OUT = 0x800,  // Any other EP, 4-7 OUT
-        EVENT_EP1_IN  = 0xa00,  // For bulk; need filling
-        EVENT_EPx_IN  = 0xb00,  // Any other EP, 2-7 IN
+        EVENT_EP1_IN  = 0x1000,
+        EVENT_EP2_IN  = 0x2000,
+        EVENT_EP3_IN  = 0x4000,
+        EVENT_EPx_IN  = 0x8000,  // Any other EP, 4-7 IN
     };
 
 private:
@@ -304,6 +332,16 @@ private:
         const uintptr_t result = _brk;
         _brk += n;
         return result;
+    }
+
+    // Return pointer to config for an endpoint.  DIR 0 = OUT
+    volatile uint8_t* get_conf(int dir, int n) {
+        if (n == 0) {
+            return dir ? &USBIEPCNF_0 : &USBOEPCNF_0;
+        }
+        n--;
+        return dir ? (volatile uint8_t*)&USBIEPCNF_1 + n * 8
+                : (volatile uint8_t*)&USBOEPCNF_1 + n * 8;
     }
 
     USB(const USB&);

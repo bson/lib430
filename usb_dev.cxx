@@ -124,9 +124,12 @@ void USB::stall(int n) {
 }
 
 void USB::input_isr(uint16_t endpoint) {
-    // XXX implement events for bulk fill
-    // Nothing to do for interrupt endpoints
-    ;
+    static const uint16_t evmap[8] = {
+          EVENT_EPx_IN, EVENT_EP1_IN, EVENT_EP2_IN, EVENT_EP3_IN,
+          EVENT_EPx_IN, EVENT_EPx_IN, EVENT_EPx_IN, EVENT_EPx_IN
+    };
+
+    post_event(evmap[endpoint]);
 }
 
 void USB::output_isr(uint16_t endpoint) {
@@ -225,7 +228,7 @@ void USB::device_req_isr(const SetupRequest* setup) {
             break;
 
         case TYPE_ENDPOINT:
-            write(0, _ep_descs + n, sizeof(EndpointDescriptor));
+            write(0, _ep_descs + (n & 0xf) - 1, sizeof(EndpointDescriptor));
             break;
 
         default:
@@ -289,12 +292,26 @@ void USB::endpoint_req_isr(const SetupRequest* setup) {
         write(0, &response, 2);
         break;
     }
+
+    case REQ_CLEAR_FEATURE:
+    case REQ_SET_FEATURE: {
+        if (setup->value == 0x00) {
+            const int ep = setup->index & 0x0f;
+            if (ep != 0) {
+                volatile uint8_t* ep_cnf = get_conf(setup->index & 0x80, ep);
+                if (setup->request == REQ_CLEAR_FEATURE) {
+                    *ep_cnf &= ~STALL;
+                } else {
+                    *ep_cnf |= STALL;
+                }
+            }
+        }
+    }
+
     case REQ_GET_DESC:
     case REQ_GET_CONF:
     case REQ_SET_CONF:
     case REQ_SET_ADDRESS:
-    case REQ_CLEAR_FEATURE:
-    case REQ_SET_FEATURE:
     case REQ_SET_DESC:
     default:
         stall(0);
@@ -392,7 +409,5 @@ void _intr_(USB_UBM_VECTOR)  usb_intr() {
         }
     }
 }
-
-
 
 #endif // __MSP430_HAS_USB__
