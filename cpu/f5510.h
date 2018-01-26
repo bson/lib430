@@ -36,18 +36,20 @@ extern SysTimer _sysTimer;
 
 extern volatile uint8_t _dummy_byte;
 
-// UCSI_A1
+// USCI_A1
 typedef UCA<UCA1STAT, UCA1CTL0, UCA1CTL1,
             UCA1MCTL, UCA1BR0, UCA1BR1,
             UCA1RXBUF, UCA1TXBUF, UCA1ABCTL,
             UCA1IRTCTL, UCA1IRRCTL, UCA1IE,
-            UCA1IFG, UCRXIE, UCTXIE, UCRXIFG, UCTXIFG> UCSI_A1;
+            UCA1IFG, UCRXIE, UCTXIE, UCRXIFG, UCTXIFG,
+            USCI_A1_VECTOR> USCI_A1;
 
-// UCSI_B1
+// USCI_B1
 typedef UCB<UCB1STAT, UCB1CTL0, UCB1CTL1,
             UCB1BR0, UCB1BR1, UCB1IE,
             UCB1RXBUF, UCB1TXBUF, UCB1I2COA,
-            UCB1I2CSA, UCB1IFG, UCTXIFG, UCRXIFG> UCSI_B1;
+            UCB1I2CSA, UCB1IFG, UCTXIFG, UCRXIFG,
+            USCI_B1_VECTOR> USCI_B1;
 
 // P1-P6 (not all pins exist externally)
 typedef Port<P1IN, P1OUT, P1DIR, P1SEL,

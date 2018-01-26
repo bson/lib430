@@ -23,7 +23,8 @@ template <volatile uint8_t& _STAT,
           uint8_t _RXIE,
           uint8_t _TXIE,
           uint8_t _RXIFG,
-          uint8_t _TXIFG>
+          uint8_t _TXIFG,
+          uint16_t _VECTOR>
 class UCA {
 public:
     enum {
@@ -63,7 +64,9 @@ public:
         IDLE = UCIDLE,
 
         RXIFG = _RXIFG,
-        TXIFG = _TXIFG
+        TXIFG = _TXIFG,
+
+        INTVEC = _VECTOR
     };
 
     ACCESSOR(volatile uint8_t&, getSTAT, _STAT);

@@ -19,7 +19,8 @@ template <volatile uint8_t& _STAT,
           volatile uint16_t& _I2CSA,
           volatile uint8_t& _IFG,
           uint8_t _TXIFG,
-          uint8_t _RXIFG>
+          uint8_t _RXIFG,
+          uint16_t _VECTOR>
 class UCB {
 public:
     enum {
@@ -58,7 +59,9 @@ public:
         NACKIFG = UCNACKIFG,
 
         TXIFG = _TXIFG,
-        RXIFG = _RXIFG
+        RXIFG = _RXIFG,
+
+        INTVEC = _VECTOR
     };
 
     ACCESSOR(volatile uint8_t&, getSTAT, _STAT);

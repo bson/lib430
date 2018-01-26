@@ -15,7 +15,12 @@ public:
     typedef T Item;
     enum { CAPACITY = _CAP };
 
-    Deque() ; _head(0), _tail(0) { }
+    Deque() : _head(0), _tail(0) { ; }
+
+    // Reset
+    void clear() {
+        _head = _tail = 0;
+    }
 
     // Return number of items
     int depth() const {
@@ -57,7 +62,7 @@ public:
     }
 
     // Add n items, appending to tail - mainly useful for buffers
-    void append(const T& v[], int n) {
+    void append(const T v[], int n) {
         for (int i = 0; i < n; i++) {
             _v[_tail++] = v[i];
             _tail %= _CAP;
@@ -65,7 +70,7 @@ public:
     }
 
     // Pull out n items, removing from head
-    void pull(T& v[], int n) {
+    void pull(T v[], int n) {
         for (int i = 0; i < n; i++) {
             v[i] = _v[_head++];
             _head %= _CAP;

@@ -344,7 +344,17 @@ void USB::endpoint_req_isr(const SetupRequest* setup) {
 void USB::setup_isr() {
     const SetupRequest* setup = (const SetupRequest*)&USBSUBLK;
     const uint8_t recipient = setup->type & 31;
+    const uint8_t type = (setup->type >> 5) & 3;
 
+    if (type == 1 || type == 2) {
+        // Class/vendor based request... pass on
+        post_event(EVENT_SETUPHK);
+        return;
+    }
+    if (type != 0) {
+        stall(0);
+        return;
+    }
     switch (recipient) {
     case REQ_DEVICE:
         device_req_isr(setup);
@@ -362,7 +372,7 @@ void USB::setup_isr() {
 }
 
 // Interrupt handler
-void _intr_(USB_UBM_VECTOR)  usb_intr() {
+void _intr_(USB_UBM_VECTOR) usb_intr() {
     // Handle this up front so SETUPIFG isn't cleared on reading USBVECINT, since this
     // effectively ends the transaction.  For this reason, the setup command needs to
     // be handled in the ISR.
@@ -400,8 +410,7 @@ void _intr_(USB_UBM_VECTOR)  usb_intr() {
             USB::output_isr(0);
             break;
         case USBVECINT_STPOW_PACKET_RECEIVED:
-            // Got a setup while processing a setup... just handle it
-            USB::setup_isr();
+            USB::stall(0);
             break;
         default:
             if (cause >= USBVECINT_INPUT_ENDPOINT1 && cause <= USBVECINT_INPUT_ENDPOINT7) {

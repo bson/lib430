@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <strings.h>
 
 typedef unsigned int uint;
 

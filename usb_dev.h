@@ -200,16 +200,16 @@ private:
     static uint8_t _addr;     // Bus address 0-127
 
 public:
-    USB(const DeviceDescriptor* dev,
-        const ConfigDescriptor* conf,
-        const InterfaceDescriptor* if_,
-        const EndpointDescriptor* eps,
-        uint8_t neps,
-        const char** strs,
-        uint8_t nstrs,
-        uint16_t plldiv)
+    USB() { }
 
-    {
+    static void configure(const DeviceDescriptor* dev,
+                          const ConfigDescriptor* conf,
+                          const InterfaceDescriptor* if_,
+                          const EndpointDescriptor* eps,
+                          uint8_t neps,
+                          const char** strs,
+                          uint8_t nstrs,
+                          uint16_t plldiv) {
         _dev_desc = dev;
         _conf_desc = conf;
         _if_desc = if_;
@@ -278,9 +278,9 @@ public:
     static bool configured() { return _configured; }
     static uint8_t addr() { return _addr; }
 
-// private:
-    // These are called from an interrupt context.  They're public because TI's compiler is broken
-    // and can't have an interrupt handler be a static class method.
+protected:
+    friend void usb_intr();
+
     static void connect_isr() {
         _connected = true;
         _suspended = false;
