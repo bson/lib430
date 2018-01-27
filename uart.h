@@ -62,28 +62,24 @@ public:
 
     bool start_write(uint8_t data) { write(data); return true; }
     bool write(uint8_t data) {
-        if (_nl && data == '\n') {
-            write('\r');
-        }
 #ifdef UART_TX_BUF
-        // If interrupts are disabled, then the transmitter is idle.  Just put the
-        // byte in the transmitter and enable interrupts.
-        if (!(USCI::CPU_IE2 & USCI::TXIE)) {
+        NoInterrupt g;
+
+        // Just add byte directly to transmitter if TXBUF is empty
+        if (USCI::CPU_IFG2 & USCI::TXIFG) {
             USCI::TXBUF = data;
-            USCI::CPU_IFG2 &= ~USCI::TXIFG;
-            USCI::CPU_IE2 |= USCI::TXIE;
-            return true;
-        }
-        // Otherwise add it to the buffer
-        if (_txbuf.space()) {
-            _txbuf.push_back(data);
+        } else {
+            // Otherwise add it to the buffer and enable interrupts
+            if (_txbuf.space()) {
+                _txbuf.push_back(data);
+                USCI::CPU_IE2 |= USCI::TXIE;
+            }
         }
         return true;
 #else // POLLED
         while (!(USCI::CPU_IFG2 & USCI::TXIFG))
             ;
         USCI::TXBUF = data;
-        USCI::CPU_IFG2 &= ~USCI::TXIFG;
         return true;
 #endif
     }
@@ -92,17 +88,23 @@ public:
 #ifdef UART_RX_BUF
     bool read_ready() { return !_rxbuf.empty(); }
     uint8_t read() {
+        // ISR modifies _tail; we modify _head.  So no need to block interrupts.
         if (_rxbuf.empty())
-            return 0;
-        else
-            return _rxbuf.pop_front();
+            return ~0;
+
+        return _rxbuf.pop_front();
     }
 #else // POLLED
     bool read_ready() { return USCI::CPU_IFG2 & USCI::RXIFG; }
     uint8_t read() { return USCI::RXBUF; }
 #endif
 
-    void putc(char c) { write(c); }
+    void putc(char c) {
+        if (_nl && c == '\n') {
+            write('\r');
+        }
+        write(c);
+    }
     void puts(const char *s) {
         while (*s) 
             putc(*s++);

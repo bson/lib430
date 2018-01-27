@@ -28,7 +28,7 @@ public:
     }
 
     // Check if empty
-    bool empty() const { return _head != _tail; }
+    bool empty() const { return _head == _tail; }
 
     // Space for more?
     bool space(uint8_t n = 1) const { return depth() <= _CAP - n; }
