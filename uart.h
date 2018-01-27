@@ -12,6 +12,9 @@ class Uart {
 #ifdef UART_RX_BUF
     Deque<uint8_t, UART_RX_BUF> _rxbuf;
 #endif
+#ifdef UART_TX_BUF
+    bool _txbusy;   // Transmission in progress
+#endif
     bool _nl;
 public:
     enum { INTVEC = USCI::INTVEC };
@@ -26,9 +29,16 @@ public:
         USCI::STAT = 0;
         USCI::CPU_IE2 &= ~(USCI::TXIE | USCI::RXIE);
 #ifdef UART_RX_BUF
+        _rxbuf.clear();
         USCI::CPU_IE2 |= USCI::RXIE;
 #endif
         USCI::CPU_IFG2 &= ~USCI::RXIFG;  // Discard anything in receiver
+#ifdef UART_TX_BUF
+        _txbuf.clear();
+        USCI::CPU_IE2 |= USCI::TXIE;
+        USCI::CPU_IFG2 &= ~USCI::TXIFG;  // Discard anything in transmitter
+        _txbusy = false;
+#endif
     }
      
     // Parameters: rate, parity enable, even parity, 8 bits, 2 stop bits
@@ -65,14 +75,14 @@ public:
 #ifdef UART_TX_BUF
         NoInterrupt g;
 
-        // Just add byte directly to transmitter if TXBUF is empty
-        if (USCI::CPU_IFG2 & USCI::TXIFG) {
+        // Just add byte directly to transmitter if not transmitting
+        if (!_txbusy) {
             USCI::TXBUF = data;
+            _txbusy = true;
         } else {
-            // Otherwise add it to the buffer and enable interrupts
+            // Otherwise add it to the buffer
             if (_txbuf.space()) {
                 _txbuf.push_back(data);
-                USCI::CPU_IE2 |= USCI::TXIE;
             }
         }
         return true;
@@ -119,7 +129,8 @@ public:
 #ifdef UART_TX_BUF
         if (USCI::CPU_IFG2 & USCI::TXIFG) {
             if (_txbuf.empty()) {
-                USCI::CPU_IE2 &= ~USCI::TXIE;
+                USCI::CPU_IFG2 &= ~USCI::TXIFG;
+                _txbusy = false;
             } else {
                 USCI::TXBUF = _txbuf.pop_front();
             }
