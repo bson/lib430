@@ -11,8 +11,6 @@ typedef unsigned int uint;
 
 // Various compiler stuff; GCC extensions also supported by TI-CC
 #define _weak_ __attribute__((weak))
-#define _ro_ __attribute__((section (".const")))
-#define _flash_ __attribute__((section (".const")))
 #define _packed_ __attribute__((packed))
 #define _used_ __attribute__((used))
 #define _intr_(VEC) __interrupt __attribute__((interrupt(VEC)))

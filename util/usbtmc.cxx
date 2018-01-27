@@ -14,7 +14,7 @@ extern void xprintf(const char *fmt, ...);
 #define dumpsetup() 0
 #endif
 
-static const USB::DeviceDescriptor usbdev _ro_ = {
+static const USB::DeviceDescriptor usbdev = {
         sizeof(USB::DeviceDescriptor),  // 8
         USB::TYPE_DEVICE,
         0x0200,       // USB 2.0.0
@@ -26,7 +26,7 @@ static const USB::DeviceDescriptor usbdev _ro_ = {
         1            // 1 configuration
 };
 
-static const USB::ConfigDescriptor usbconf _ro_ = {
+static const USB::ConfigDescriptor usbconf = {
         sizeof(USB::ConfigDescriptor), // 8
         USB::TYPE_CONFIG,
         0,         // Total length (filled in when sent)
@@ -37,7 +37,7 @@ static const USB::ConfigDescriptor usbconf _ro_ = {
         20         // Will draw max 50mA
 };
 
-static const USB::InterfaceDescriptor usbif _ro_ = {
+static const USB::InterfaceDescriptor usbif = {
         sizeof(USB::InterfaceDescriptor), // 8
         USB::TYPE_INTERFACE,
         0,           // 0 = first interface
@@ -47,7 +47,7 @@ static const USB::InterfaceDescriptor usbif _ro_ = {
         0,           // Interface string
 };
 
-static const USB::EndpointDescriptor usbep[] _ro_ = {
+static const USB::EndpointDescriptor usbep[] = {
     {
      // EP1 OUT - bulk
      sizeof(USB::EndpointDescriptor), USB::TYPE_ENDPOINT,
@@ -65,7 +65,7 @@ static const USB::EndpointDescriptor usbep[] _ro_ = {
     }
 };
 
-static USBTMC_Capabilities cap _ro_ = {
+static USBTMC_Capabilities cap = {
   0, 0,        // Status, reserved
   0x0100,      // Version, 1.0.0
   0b00000100,  // Interface cap: D2=USB488.2, no REN_CONTROL/LOCKOUT, no TRIGGER

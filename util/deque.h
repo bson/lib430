@@ -10,7 +10,7 @@ template <typename T, int _CAP>
 class Deque {
     T _v[_CAP];
     uint8_t _head;  // First item in array
-    uint8_t _tail;  // First empty slot, or == _head if full
+    uint8_t _tail;  // First empty slot
 public:
     typedef T Item;
     enum { CAPACITY = _CAP };
@@ -31,7 +31,7 @@ public:
     bool empty() const { return _head == _tail; }
 
     // Space for more?
-    bool space(uint8_t n = 1) const { return depth() <= _CAP - n; }
+    bool space(uint8_t n = 1) const { return depth() <= _CAP - n - 1; }
 
     // Add to back
     void push_back(const T& v) {

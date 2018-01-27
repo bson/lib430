@@ -208,7 +208,7 @@ void USB::device_req_isr(const SetupRequest* setup) {
 
         case TYPE_STRING: {
             if (n == 0) {
-                static const StringDesc0 s0 _ro_ = {
+                static const StringDesc0 s0 = {
                     sizeof(StringDesc0), TYPE_STRING, 0x409
                 };
                 write(0, &s0, sizeof s0);
