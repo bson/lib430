@@ -39,6 +39,21 @@ public:
     }
 };
 
+// RAII scope guard, reentrant
+// XXX doesn't work
+class NoInterruptReent {
+    uint16_t _sr;
+public:
+    NoInterruptReent() {
+        _sr = __get_interrupt_state();
+        disable_interrupt();
+    }
+
+    ~NoInterruptReent() {
+        __set_interrupt_state(_sr);
+    }
+};
+
 template <typename T>
 static inline const
 T& max(const T& a, const T& b) {

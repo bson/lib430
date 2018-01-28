@@ -36,18 +36,6 @@ void USB::init() {
     USBCNF    = USB_EN | PUR_EN;
     USBPHYCTL = PUSEL;  // Use port U for USB
 
-    // 1. Enable VUSB and V18
-    USBPWRCTL = SLDOAON | USBDETEN | SLDOEN | VUSBEN;
-
-    // 2. Give power 2ms to start up
-    _sysTimer.wait(TIMER_MSEC(2));
-
-    // Enable relevant interrupts
-    USBPWRCTL |= VBONIE | VBOFFIE | VUOVLIE;
-    USBIE     |= RSTRIE | SUSRIE | RESRIE | SETUPIE | STPOWIE;
-
-    USBMAINT = 0; // Don't use TSGEN or timer
-
     // Enable EP0 IN
     USBIEPCNF_0 = UBME | USBIIE;
     USBIEPCNT_0 = 0;
@@ -56,8 +44,21 @@ void USB::init() {
     USBOEPCNF_0 = UBME | USBIIE;
     USBOEPCNT_0 = 0;
 
-    USBIEPIE = 1;
-    USBOEPIE = 1;
+    // 1. Enable VUSB and V18
+    USBPWRCTL = SLDOAON | USBDETEN | SLDOEN | VUSBEN;
+
+    // 2. Give power 2ms to start up
+    _sysTimer.wait(TIMER_MSEC(2));
+
+    // Enable relevant interrupts
+    USBIFG     = 0;
+    USBPWRCTL |= VBONIE | VBOFFIE | VUOVLIE;
+    USBIE     |= RSTRIE | SUSRIE | RESRIE | SETUPIE | STPOWIE;
+
+    USBMAINT = 0; // Don't use TSGEN or timer
+
+    USBIEPIE = 1;   // EP0 input transaction interrupts
+    USBOEPIE = 1;   // EP0 output transaction interrupts
 }
 
 void USB::add_endpoint(int n, uint16_t rxbuf_size, uint16_t txbuf_size) {
@@ -415,7 +416,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
         default:
             if (cause >= USBVECINT_INPUT_ENDPOINT1 && cause <= USBVECINT_INPUT_ENDPOINT7) {
                 // Enable nested interrupts since we're way down the priority list
-                enable_interrupt();
+                //enable_interrupt();
 
                 // Endpoint input
                 const uint16_t endpoint = (cause - USBVECINT_INPUT_ENDPOINT1) / 2;
@@ -424,7 +425,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
             }
             if (cause >= USBVECINT_OUTPUT_ENDPOINT1 && cause <= USBVECINT_OUTPUT_ENDPOINT7) {
                 // Enable nexted interrupts since we're way down the priority list
-                enable_interrupt();
+                //enable_interrupt();
 
                 // Endpoint output
                 const uint16_t endpoint = (cause - USBVECINT_OUTPUT_ENDPOINT1) / 2;

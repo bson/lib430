@@ -274,6 +274,10 @@ void USBTMC<Delegate>::service() {
             DMSG("USB: EP1 IN\n");
             continue;
 
+        case USB::EVENT_RESET:
+            DMSG("USB: Reset\n");
+            continue;
+
         default:
             DMSG("USB: other event: %x\n", event);
             continue;

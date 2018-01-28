@@ -73,7 +73,9 @@ public:
     bool start_write(uint8_t data) { write(data); return true; }
     bool write(uint8_t data) {
 #ifdef UART_TX_BUF
-        NoInterrupt g;
+        // Use a reentrant guard here so in a pinch we can print debug output
+        // from an ISR
+        NoInterruptReent g;
 
         // Just add byte directly to transmitter if not transmitting
         if (!_txbusy) {
