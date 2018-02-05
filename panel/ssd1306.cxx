@@ -7,8 +7,6 @@
 
 #include "panel/font/runes.h"
 
-#pragma CHECK_ULP("none")
-
 // Realize code for I2C based device
 #include "i2c_master/i2c.h"
 
@@ -153,5 +151,3 @@ void Panel<Bus,Device>::clear() {
 }
 
 }; // namespace ssd1306
-
-#pragma RESET_ULP("all")
