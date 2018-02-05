@@ -3,8 +3,9 @@
 //
 
 #include "common.h"
-#include "ssd1306/ssd1306.h"
-#include "ssd1306/font/runes.h"
+#include "panel/ssd1306.h"
+
+#include "panel/font/runes.h"
 
 #pragma CHECK_ULP("none")
 
@@ -12,7 +13,7 @@
 #include "i2c_master/i2c.h"
 
 namespace rune_defs {
-#include "ssd1306/font/runes.inc"
+#include "panel/font/runes.inc"
 }
 
 namespace ssd1306 {
