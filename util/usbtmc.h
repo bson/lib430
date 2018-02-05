@@ -99,7 +99,8 @@ public:
            const char* serial,
            uint16_t plldiv);
 
-    void init();
+    void init() { USB::init(); }
+    void add_eps();
     void service();
     void control_req(const USB::SetupRequest* setup);
     void bulk_dev_req();

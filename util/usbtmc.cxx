@@ -51,15 +51,15 @@ static const USB::EndpointDescriptor usbep[] = {
     {
      // EP1 OUT - bulk
      sizeof(USB::EndpointDescriptor), USB::TYPE_ENDPOINT,
-     USB::EP_ADDR_IN | 1, USB::EP_ATTR_TTBULK, 512, 0
+     USB::EP_ADDR_IN | 1, USB::EP_ATTR_TTBULK, 64, 0
     },
     {
      // EP1 IN - bulk
      sizeof(USB::EndpointDescriptor), USB::TYPE_ENDPOINT,
-     USB::EP_ADDR_OUT | 1, USB::EP_ATTR_TTBULK, 512, 0
+     USB::EP_ADDR_OUT | 1, USB::EP_ATTR_TTBULK, 64, 0
     },
     {
-     // EP2 IN - interrupt, poll 50ms.  Size 2 is mandated by USB488
+     // EP2 IN - interrupt, poll 50ms.  Packet size 2 is mandated by USB488
      sizeof(USB::EndpointDescriptor), USB::TYPE_ENDPOINT,
      USB::EP_ADDR_IN | 2, USB::EP_ATTR_TTINTR, 0x02, 50,
     }
@@ -74,6 +74,15 @@ static USBTMC_Capabilities cap = {
 };
 
 static const char* strs[3];
+
+#ifdef DEBUG_TRACE
+static void dumpsetup() {
+    const USB::SetupRequest* req = USB::get_setup();
+
+    DMSG("  SETUP REQ: T=%x R=%x V=%x I=%x L=%x\n",
+            req->type, req->request, req->value, req->index, req->length);
+}
+#endif
 
 template <typename Delegate>
 USBTMC<Delegate>::USBTMC(const char* manuf,
@@ -91,21 +100,17 @@ USBTMC<Delegate>::USBTMC(const char* manuf,
 }
 
 template <typename Delegate>
-void USBTMC<Delegate>::init() {
-    USB::init();
-    USB::add_endpoint(1, 64, 64);
-    USB::add_endpoint(2, 64, 64);
-    USB::enable();
-}
+void USBTMC<Delegate>::add_eps() {
+    DMSG("USBTMC: adding endpoints\n");
+    USB::ready_ack();
+    {
+        NoInterrupt i;
 
-#ifdef DEBUG_TRACE
-static void dumpsetup() {
-    const USB::SetupRequest* req = USB::get_setup();
-
-    DMSG("  SETUP REQ: T=%x R=%x V=%x I=%x L=%x\n",
-            req->type, req->request, req->value, req->index, req->length);
+        USB::add_endpoint(1, 64, 64);
+        USB::add_endpoint(2, 64, 64);
+    }
+    DMSG("USBTMC: endpoints added\n");
 }
-#endif
 
 template <typename Delegate>
 void USBTMC<Delegate>::control_req(const USB::SetupRequest* setup) {
@@ -116,7 +121,7 @@ void USBTMC<Delegate>::control_req(const USB::SetupRequest* setup) {
         } else {
             cap.status = STATUS_SUCCESS;
         }
-        USB::write(0, &cap, sizeof cap);
+        USB::write_short(0, &cap, sizeof cap);
         break;
 
     case INITIATE_ABORT_BULK_IN:
@@ -124,18 +129,18 @@ void USBTMC<Delegate>::control_req(const USB::SetupRequest* setup) {
         // We don't current have a mechanism for long bulk ops, so just fail them
         const uint8_t tag = setup->value;
         const uint16_t response = (tag << 8) | STATUS_FAILED;
-        USB::write(0, &response, 2);
+        USB::write_short(0, &response, 2);
         break;
     }
     case INITIATE_CLEAR: {
         const uint8_t response = STATUS_FAILED;
-        USB::write(0, &response, 1);
+        USB::write_short(0, &response, 1);
         break;
     }
     case READ_STATUS_BYTE: {
         const uint16_t tag = setup->value & 0x7f;
         const uint32_t response = (tag << 8) | STATUS_SUCCESS;
-        USB::write(2, &response, 3);
+        USB::write_short(2, &response, 3);
         break;
     }
     case CHECK_ABORT_BULK_OUT_STATUS:
@@ -210,52 +215,59 @@ void USBTMC<Delegate>::reply(const uint8_t* data, int len) {
     r.attrs = ATTR_EOM;
     memcpy(r.data, data, len);
     r.data[len] = '\n';   // USB488
-    USB::write(1, &r, sizeof r + len);
+    USB::write_short(1, &r, sizeof r + len);
 }
 
 template <typename Delegate>
 void USBTMC<Delegate>::srq() {
     const uint16_t status = 0x4081;  // 0x40 = RQS set, see IEEE-488.2
-    USB::write(2, &status, 2);
+    USB::write_short(2, &status, 2);
 }
 
 template <typename Delegate>
 void USBTMC<Delegate>::service() {
-    uint16_t event;
+    uint32_t event;
 
     while ((event = USB::pending_event()) != USB::EVENT_NONE) {
         switch (event) {
-        case USB::EVENT_CONNECT:
-            Delegate::connected(USB::connected());
-            DMSG("USB: connect/disconnect event %d\n", USB::connected());
+        case USB::EVENT_RESET:
+            DMSG("USBTMC: reset by host\n");
             continue;
 
-        case USB::EVENT_SUSPEND:
-            if (!USB::suspended())
-                USB::start();  // Start up PLL
-
-            DMSG("USB: suspend/resume event %d\n", USB::suspended());
+        case USB::EVENT_PLL_OOL:
+            DMSG("USBTMC: PLL sync lost\n");
             continue;
 
-        case USB::EVENT_CONFIG:
-            DMSG("USB: host configure event\n");
+        case USB::EVENT_INACTIVE:
+            DMSG("USBTMC: inactive (disconnected)\n");
+            Delegate::disconnect();
+            continue;
+
+        case USB::EVENT_READY:
+            DMSG("USBTMC: ready\n");
+            add_eps();
+            continue;
+
+        case USB::EVENT_ACTIVE:
+            DMSG("USBTMC: active\n");
+            Delegate::active();
             continue;
 
         case USB::EVENT_SETUP:
-            DMSG("USB: setup\n");
+            DMSG("USBTMC: setup\n");
             dumpsetup();
             continue;
 
         case USB::EVENT_STALL:
-            DMSG("USB: stalled\n");
+            DMSG("USBTMC: stalled\n");
             continue;
 
         case USB::EVENT_SETADDR:
-            DMSG("USB: set addr %d\n", USB::addr());
+            DMSG("USBTMC: set addr %d\n", USB::addr());
             continue;
 
         case USB::EVENT_SETUPHK: {
-            DMSG("USB: application control/setup hook\n");
+            DMSG("USBTMC: application control/setup hook\n");
             dumpsetup();
 
             const USB::SetupRequest* setup = USB::get_setup();
@@ -265,21 +277,17 @@ void USBTMC<Delegate>::service() {
             continue;
         }
         case USB::EVENT_EP1_OUT:
-            DMSG("USB: EP1 OUT\n");
+            DMSG("USBTMC: EP1 OUT\n");
             USB::read(1, _bulk_out_req, _bulk_out_len);
             bulk_dev_req();
             continue;
 
         case USB::EVENT_EP1_IN:
-            DMSG("USB: EP1 IN\n");
-            continue;
-
-        case USB::EVENT_RESET:
-            DMSG("USB: Reset\n");
+            DMSG("USBTMC: EP1 IN\n");
             continue;
 
         default:
-            DMSG("USB: other event: %x\n", event);
+            DMSG("USBTMC: other event: %x\n", event);
             continue;
         }
     }
