@@ -3,6 +3,7 @@
 #include "common.h"
 #include "usb_dev.h"
 #include "systimer.h"
+#include "task.h"
 
 #include <strings.h>
 
@@ -25,6 +26,9 @@ volatile USB::State USB::_state;
 uint16_t USB::_brk;
 uint8_t USB::_neps;     // Number of endpoint pairs
 uint8_t USB::_addr;     // Bus address 0-127
+
+Task* USB::_task;
+
 
 void USB::reset() {
     NoInterruptReent g;
@@ -552,6 +556,9 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
             break;
         }
     }
+
+    if (USB::_task && USB::_events)
+        Task::switch_task(*USB::_task);
 }
 
 #endif // __MSP430_HAS_USB__

@@ -68,6 +68,7 @@
 #include "config.h"
 #include "systimer.h"
 #include "cpu/cpu.h"
+#include "task.h"
 
 #ifdef __MSP430_HAS_USB__
 
@@ -264,6 +265,8 @@ private:
     static uint8_t _neps;     // Number of endpoint pairs
     static uint8_t _addr;     // Bus address 0-127
 
+    static Task* _task;       // Service task, if any
+
 public:
     USB() { }
 
@@ -287,6 +290,7 @@ public:
         _neps = 0;
         _state = STATE_INACTIVE;
         _events = 0;
+        _task = NULL;
     }
 
     // Get next event, or 0 if none; removes event reuturned from pending set.
@@ -351,6 +355,10 @@ public:
     // State inquiries
     static State state() { return _state; }
     static uint8_t addr() { return _addr; }
+
+    // Set and get task
+    static void set_task(Task* t) { _task = t; }
+    static Task* get_task() { return _task; }
 
 protected:
     friend void usb_intr();

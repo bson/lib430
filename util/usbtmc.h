@@ -22,6 +22,7 @@ class USBTMC {
     uint8_t _bulk_out_req[65];  // Buffer holding bulk-out commands witb an extra byte
     uint8_t _tag;               // Tag of current request
     int _bulk_out_len;          // Length of bulk-out request
+
 public:
     // Class control requests
     enum {
