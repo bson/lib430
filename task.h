@@ -1,6 +1,20 @@
 #ifndef _TASK_H_
 #define _TASK_H_
 
+#include <stdint.h>
+#include "common.h"
+
+// Simple task abstraction.  Its main purpose is to support a simple
+// model where there is a single main or "idle" context, and additional
+// service tasks for e.g. USB or I2C Device support to do processing too
+// complex for an ISR.  In this case the ISR notes work to be done, e.g.
+// by registering an event or setting a flag, then switches to its service
+// task.  The service task performs its processing, then yields to the
+// idle task.
+
+// But it wouldn't be overly complicated to add a scheduler, mutexes, and
+// condition variables for more elaborate priority-based scheduling.
+
 extern "C" {
 uint16_t *reg_save _used_;
 uint16_t leap _used_;
@@ -97,14 +111,18 @@ public:
         __asm("  mov.w  &leap, pc");
     }
 
+    // Unguarded task switch.
+    //
     // A task switch can be made in an ISR in two ways:
     //  1. Suspend state on entry.  Resume a task on exit.  This is expensive as it incurs
     //     the overhead of saving state for each interrupt.
     //  2. If a switch is needed, then save the state and resume the desired task.  This has
     //     the peculiar effect of suspending a task inside an ISR, and when eventually resumed
-    //     again will resume from inside the ISR and return from the interrupt though outside
-    //     an interrupt context.
+    //     again will resume from inside the ISR and return from the interrupt.
+    // This function can be used to switch to a specific service task at the end of an ISR.
     static void switch_task(Task& t) {
+        // _task can be NULL before we're bootstrapped, yet we may enter an interrupt
+        // handler during init.  Just ignore.  Also don't switch to the active task.
         if (_task && &t != _task) {
             if (!prepare_to_suspend()) {
                 _task = &t;
@@ -135,7 +153,7 @@ public:
     static void bootstrap() {
         NoInterrupt g;
         _task = &_main;
-        (void)prepare_to_suspend();
+        //(void)prepare_to_suspend();
         // Fall through, never resuming
     }
 
