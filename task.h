@@ -43,11 +43,11 @@ public:
     // must be disabled.
     static uint16_t prepare_to_suspend() {
         retval = 0;
-        reg_save = _task->_state.reg + 14;          // R15 save slot
+        reg_save = _task->_state.reg + 15;  // R15 save slot plus one
 
-        __asm("  mov.w  sp, &tasktemp");       // Stash SP
-        __asm("  mov.w  &reg_save, sp");      // SP now points to R15 save slot
-        __asm("  push.w r15");               // Save R15...
+        __asm("  mov.w  sp, &tasktemp");    // Stash SP
+        __asm("  mov.w  &reg_save, sp");    // SP now points to R15 save slot + 1
+        __asm("  push.w r15");              // Save R15...
         __asm("  push.w r14");
         __asm("  push.w r13");
         __asm("  push.w r12");
@@ -60,7 +60,7 @@ public:
         __asm("  push.w r5");
         __asm("  push.w r4");
         __asm("  push.w sr");
-        __asm("  push.w &tasktemp");     // Stashed SP
+        __asm("  push.w &tasktemp");        // Stashed SP
         __asm("  mov.w  sp, r12");
         __asm("  mov.w  &tasktemp, sp");
         __asm("  mov.w  pc, -2(r12)");
@@ -104,28 +104,31 @@ public:
     //     the peculiar effect of suspending a task inside an ISR, and when eventually resumed
     //     again will resume from inside the ISR and return from the interrupt though outside
     //     an interrupt context.
-    static void switch_task(Task* t) {
-        if (_task && t && t != _task) {
+    static void switch_task(Task& t) {
+        if (_task && &t != _task) {
             if (!prepare_to_suspend()) {
-                _task = t;
+                _task = &t;
                 resume();
             }
         }
     }
 
     // Yield to specific task
-    static void yield(Task* t) {
+    static void yield(Task& t) {
         NoInterruptReent g;
         switch_task(t);
     }
 
     // Launch task.
-    static void launch(Task *t, StartFunc start, void* stack) {
-        t->_state.reg[REG_SP] = (uint16_t)stack;
-        t->_state.reg[REG_PC] = (uint16_t)task_wrapper;
+    static void launch(Task& t, StartFunc start, void* stack) {
+        t._state.reg[REG_SP] = (uint16_t)stack;
+        t._state.reg[REG_PC] = (uint16_t)task_wrapper;
+        t._state.reg[REG_SR] = __get_SR_register();
+
+        NoInterrupt g;
         task_start = (uint16_t)start;
 
-        yield(t);
+        switch_task(t);
     }
 
     // Boostrap: initialize and wrap current execution context in main task
@@ -133,9 +136,11 @@ public:
         NoInterrupt g;
         _task = &_main;
         (void)prepare_to_suspend();
+        // Fall through, never resuming
     }
 
 private:
+#pragma FUNC_NEVER_RETURNS
     static void task_wrapper() {
         const uint16_t start = task_start;
         enable_interrupt();

@@ -101,7 +101,7 @@ void USB::resume() {
 void USB::ready_ack() {
     enable_pll();
 
-    _sysTimer.wait(TIMER_USEC(20));
+    _sysTimer.delay(TIMER_USEC(20));
 
     NoInterrupt g;
 
@@ -155,12 +155,12 @@ void USB::enable_pll() {
     // Workaorund for USB8 errata - briefly enable DCO or USB PLL may not start
     const uint16_t ucs4 = UCSCTL4;
     UCSCTL4 = SELA__XT2CLK + SELS__XT2CLK + SELM__DCOCLK; // Enable the DCO
-    _sysTimer.wait(TIMER_MSEC(1));
+    _sysTimer.delay(TIMER_MSEC(1));
     UCSCTL4 = ucs4;
 
     do {
         USBPLLIR = 0; // Clear PLL IFGs
-        _sysTimer.wait(TIMER_MSEC(1));
+        _sysTimer.delay(TIMER_MSEC(1));
     } while (USBPLLIR);
 
     USBCNF |= USB_EN;   // USB module memory access enable

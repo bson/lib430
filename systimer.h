@@ -18,7 +18,7 @@ public:
     class Future {
         uint32_t _time;
     public:
-        Future(uint32_t t = 0)  // also default ctor
+        explicit Future(uint32_t t = 0)  // also default ctor
         : _time(t) {
         }
 
