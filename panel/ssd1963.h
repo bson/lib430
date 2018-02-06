@@ -127,7 +127,11 @@ public:
     static void set_rgb(uint8_t r, uint8_t g, uint8_t b) {
         _r = r; _g = g; _b = b;
     }
+    static void render(uint16_t x, uint16_t y, Rune rune, uint16_t w, uint16_t h);
 private:
+    // Set window
+    static void set_window(uint16_t col, uint16_t row, uint16_t w, uint16_t h);
+
     // A bunch of inlined primitives
     static void command_start(uint8_t cmd) {
         CONTROL_PORT::P_OUT |= MASK_RS | MASK_RD | MASK_WR;

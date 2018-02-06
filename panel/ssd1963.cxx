@@ -2,7 +2,11 @@
 #include "common.h"
 #include "ssd1963.h"
 #include "systimer.h"
+#include "panel/font/runes.h"
 
+namespace rune_defs {
+#include "panel/font/runes.inc"
+}
 
 namespace ssd1963 {
 
@@ -93,6 +97,29 @@ template <typename _DBPORT,
           int _HEIGHT>
 void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGHT>
           ::fill(uint16_t col, uint16_t row, uint16_t w, uint16_t h) {
+    set_window(col, row, w, h);
+
+    command_start(CMD_WRITE_MEMORY_START);
+    for (uint16_t r = 0; r < w; ++r)
+        for (uint16_t c = 0; c < h; ++c) {
+            data(_r);
+            data(_g);
+            data(_b);
+        }
+    command_end();
+}
+
+template <typename _DBPORT,
+          typename _CTLPORT,
+          uint8_t _CTL_CS,
+          uint8_t _CTL_WR,
+          uint8_t _CTL_RD,
+          uint8_t _CTL_RS,
+          int _WIDTH,
+          int _HEIGHT>
+void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGHT>
+          ::set_window(uint16_t col, uint16_t row, uint16_t w, uint16_t h) {
+
     command_start(CMD_SET_PAGE_ADDRESS);
     data(row >> 8);
     data(row);
@@ -106,16 +133,49 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGH
     data((col + w - 1) >> 8);
     data(col + w - 1);
     command_end();
-
-    command_start(CMD_WRITE_MEMORY_START);
-    for (uint16_t r = 0; r < w; ++r)
-        for (uint16_t c = 0; c < h; ++c) {
-            data(_r);
-            data(_g);
-            data(_b);
-        }
-    command_end();
 }
 
+template <typename _DBPORT,
+          typename _CTLPORT,
+          uint8_t _CTL_CS,
+          uint8_t _CTL_WR,
+          uint8_t _CTL_RD,
+          uint8_t _CTL_RS,
+          int _WIDTH,
+          int _HEIGHT>
+void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGHT>
+          ::render(uint16_t x, uint16_t y, Rune rune, uint16_t w, uint16_t h)  {
+    set_window(x, y, w, h);
+
+    // Run-length encoded... unpack.
+    command_start(CMD_WRITE_MEMORY_START);
+
+    // Format: 8 bits at a time, LSB first.
+    // Top left to right, then move down one row from leftmost.  Bits are
+    // packed into bytes and then run-length encoded.
+    const uint8_t* start = rune_defs::rune_data + rune_defs::rune_offset[rune];
+
+    for (const uint8_t *p = start; p < start + rune_defs::rune_size[rune];) {
+        uint8_t n = *p++;
+        if (!n) {
+            for (int i = 0; i < 3*8; ++i) {
+                data(0);
+            }
+            continue;
+        }
+        const uint8_t v = *p++;
+        while (n--) {
+            for (int i = 0; i < 8; ++i) {
+                if (v & 1) {
+                    data(_r); data(_g); data(_b);
+                } else {
+                    data(0); data(0); data(0);
+                }
+                v >>= 1;
+            }
+        }
+    }
+    command_end();
+}
 
 };
