@@ -21,7 +21,11 @@ template <typename _DBPORT,
           uint8_t _CTL_RS,
           int _WIDTH  = 480,
           int _HEIGHT = 272>
-class Panel: public Device {
+class Panel {
+    static uint8_t _r;
+    static uint8_t _g;
+    static uint8_t _b;
+
 public:
     typedef _DBPORT DATA_PORT;
     typedef _CTLPORT CONTROL_PORT;
@@ -112,27 +116,32 @@ public:
         CMD_SET_LSHIFT_FREQ    = 0xe6,
         CMD_GET_LSHIFT_FREQ    = 0xe7,
         CMD_SET_PIXEL_DATA_INTERFACE = 0xf0,
-        CMD_GET_PIXEL_DATA_INTERFACE = 0xf1,
+        CMD_GET_PIXEL_DATA_INTERFACE = 0xf1
     };
 
-    void Panel() { }
+    Panel() { }
 
     static void init();
     static void clear();
+    static void fill(uint16_t col, uint16_t row, uint16_t w, uint16_t h);
+    static void set_rgb(uint8_t r, uint8_t g, uint8_t b) {
+        _r = r; _g = g; _b = b;
+    }
 private:
     // A bunch of inlined primitives
     static void command_start(uint8_t cmd) {
-        CONTROL_PORT.OUT |= MASK_RS | MASK_RD | MASK_WR;
-        CONTROL_PORT.OUT &= ~MASK_WR;
-        DATA_PORT.OUT = cmd;
-        CONTROL_PORT.OUT |= MASK_WR;
+        CONTROL_PORT::P_OUT |= MASK_RS | MASK_RD | MASK_WR;
+        CONTROL_PORT::P_OUT &= ~MASK_WR;
+        DATA_PORT::P_DIR = 0xff;  // Out
+        DATA_PORT::P_OUT = cmd;
+        CONTROL_PORT::P_OUT |= MASK_WR;
     }
     static void command_end() { ; }
 
     static void data(uint8_t d) {
-        CONTROL_PORT.OUT &= ~(MASK_WR | MASK_RS);
-        DATA_PORT.OUT = d;
-        CONTROL_PORT.OUT |= MASK_WR;
+        CONTROL_PORT::P_OUT &= ~(MASK_WR | MASK_RS);
+        DATA_PORT::P_OUT = d;
+        CONTROL_PORT::P_OUT |= MASK_WR;
     }
     static void data16(uint16_t d) {
         data(d >> 8);
@@ -147,31 +156,31 @@ private:
         data(param);
         command_end();
     }
-    static void wcommand16(uint8_t cmd, uint16_t param) {
-        command_start(cmd);
-        data16(param);
-        command_end();
-    }
     // Yet another variation: command followed by array of bytes
-    static void wcommand_barr(uint8_t cmd, uint8_t nbytes, const uint8_t* data) {
+    static void wcommand_barr(uint8_t cmd, uint8_t nbytes, const uint8_t* d) {
         command_start(cmd);
         while (nbytes--)
-            data(*data++);
+            data(*d++);
         command_end();
     }
 
     static uint8_t rdata() {
-        CONTROL_PORT.OUT &= ~MASK_RS;
-        CONTROL_PORT.OUT &= ~MASK_RD;
-        const uint8_t tmp = DATA_PORT.IN;
-        CONTROL_PORT.OUT |= MASK_RD;
+        DATA_PORT::P_DIR = 0x00;  // Input
+        CONTROL_PORT::P_OUT &= ~MASK_RS;
+        CONTROL_PORT::P_OUT &= ~MASK_RD;
+        const uint8_t tmp = DATA_PORT::P_IN;
+        CONTROL_PORT::P_OUT |= MASK_RD;
+        DATA_PORT::P_DIR = 0xff;  // Return to output
         return tmp;
     }
     static uint8_t rcommand(uint8_t cmd) {
         command_start(cmd);
         const uint8_t val = rdata();
         command_end();
-        return tmp;
+        return val;
     }
 };
 }; // namespace ssd1963
+
+#endif // _SSD1963_H_
+
