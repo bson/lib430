@@ -13,6 +13,7 @@ typedef unsigned int uint;
 #define _weak_ __attribute__((weak))
 #define _packed_ __attribute__((packed))
 #define _used_ __attribute__((used))
+#define _noreturn_ __attribute__((noreturn))
 #define _intr_(VEC) __interrupt __attribute__((interrupt(VEC)))
 
 // These two wrap the MSP430 compiler intrinsics to factor it out as a compiler
