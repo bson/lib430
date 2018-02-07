@@ -16,10 +16,11 @@
 // condition variables for more elaborate priority-based scheduling.
 
 extern "C" {
-uint16_t *reg_save _used_;
-uint16_t leap _used_;
-volatile uint16_t retval _used_;
-uint16_t tasktemp _used_;
+uint16_t *task_reg_save _used_;
+uint16_t task_leap _used_;
+volatile uint16_t task_retval _used_;
+uint16_t task_temp _used_;
+uint16_t task_temp2 _used_;
 uint16_t task_start _used_;
 }
 
@@ -56,11 +57,11 @@ public:
     // resumed.  All CPU register state change after this call is "lost".  Interrupts
     // must be disabled.
     static uint16_t prepare_to_suspend() {
-        retval = 0;
-        reg_save = _task->_state.reg + 15;  // R15 save slot plus one
+        task_retval = 0;
+        task_reg_save = _task->_state.reg + 15;  // R15 save slot plus one
 
-        __asm("  mov.w  sp, &tasktemp");    // Stash SP
-        __asm("  mov.w  &reg_save, sp");    // SP now points to R15 save slot + 1
+        __asm("  mov.w  sp, &task_temp");    // Stash SP
+        __asm("  mov.w  &task_reg_save, sp");    // SP now points to R15 save slot + 1
         __asm("  push.w r15");              // Save R15...
         __asm("  push.w r14");
         __asm("  push.w r13");
@@ -74,25 +75,28 @@ public:
         __asm("  push.w r5");
         __asm("  push.w r4");
         __asm("  push.w sr");
-        __asm("  push.w &tasktemp");        // Stashed SP
+        __asm("  push.w &task_temp");        // Stashed SP
+        __asm("  mov.w  r12, &task_temp2");
         __asm("  mov.w  sp, r12");
-        __asm("  mov.w  &tasktemp, sp");
+        __asm("  mov.w  &task_temp, sp");
         __asm("  mov.w  pc, -2(r12)");
 
-        // On resume(), execution comes back here with values saved above.
+        // On resume(), execution comes back here with values saved above, except for R12
+        // which can be found in task_temp2.
+        __asm("  mov.w  &task_temp2, r12");
 
-        return retval;
+        return task_retval;
     }
 
     // Resume current task (as per _task).  Never returns.  Interrupts must be disabled.
 #pragma FUNC_NEVER_RETURNS
     static void resume() {
-        retval = 1;
-        reg_save = _task->_state.reg;        // PC save slot
+        task_retval = 1;
+        task_reg_save = _task->_state.reg+1;   // SP save slot
 
-        __asm("  mov.w  &reg_save, r12");
-        __asm("  mov.w  @r12+, &leap");       // Saved PC
+        __asm("  mov.w  &task_reg_save, r12");
         __asm("  mov.w  @r12+, sp");
+        __asm("  push.w -4(r12)");            // Push saved PC for return
         __asm("  nop");                       // Required for SR change
         __asm("  mov.w  @r12+, sr");
         __asm("  nop");                       // Required for SR change
@@ -104,11 +108,12 @@ public:
         __asm("  mov.w  @r12+, r9");
         __asm("  mov.w  @r12+, r10");
         __asm("  mov.w  @r12+, r11");
-        __asm("  mov.w  @r12+, r12");        // Pro forma
+        __asm("  mov.w  @r12+, r13");        // Skip R12 without affecting SR
         __asm("  mov.w  @r12+, r13");
         __asm("  mov.w  @r12+, r14");
         __asm("  mov.w  @r12+, r15");
-        __asm("  mov.w  &leap, pc");
+        __asm("  mov.w  -8(r12), &task_temp2");
+        __asm("  ret");
     }
 
     // Unguarded task switch.

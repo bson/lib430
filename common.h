@@ -41,7 +41,6 @@ public:
 };
 
 // RAII scope guard, reentrant
-// XXX doesn't work
 class NoInterruptReent {
     uint16_t _saved;
 public:
