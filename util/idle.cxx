@@ -27,7 +27,7 @@ void Idle::work() {
 				a->activate();
 
 				// Only run one activity per invocation
-				break;
+//				break;
 			}
 		}
 		_flags.in_work = false;

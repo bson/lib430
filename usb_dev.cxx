@@ -558,7 +558,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
     }
 
     if (USB::_task && USB::_events)
-        Task::switch_task(*USB::_task);
+        Task::activate(*USB::_task);
 }
 
 #endif // __MSP430_HAS_USB__

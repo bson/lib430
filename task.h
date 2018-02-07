@@ -20,7 +20,7 @@ uint16_t *task_reg_save _used_;
 uint16_t task_leap _used_;
 volatile uint16_t task_retval _used_;
 uint16_t task_temp _used_;
-uint16_t task_temp2 _used_;
+uint16_t task_r12 _used_;
 uint16_t task_start _used_;
 }
 
@@ -28,17 +28,19 @@ class Task {
 public:
     typedef void (*StartFunc)();
 
-    static Task _main;   // Main (bootstrap) task
+    static Task  _main;  // Main (bootstrap) task, also first in chain
     static Task* _task;  // Current running task
 
 private:
+    Task* _next;         // Next task in chain
+
     // Small memory model CPU state for MSP430/430X.  Top 4 bits of registers are
     // effectively unused.
     struct State {
         // Register save slots.  First is PC, then R1 (SP), R2 (SR), no R3 slot, up to R15.
         // R15 is last.  This layout facilitates efficient save and load.
         uint16_t reg[15];
-    } _state;
+    } _save;
 
     // Save slots, to explain layout
     enum {
@@ -50,15 +52,89 @@ private:
         REG_R15 = REG_R5 + 10
     };
 
+    uint8_t _prio;       // Priority; higher is higher
+    uint8_t _state;
+
+public:
+    // Task states
+    enum {
+        STATE_ACTIVE = 0,  // Runnable
+        STATE_WAIT         // Inactive
+    };
+
+    // Task priorities (just a few points)
+    enum {
+        PRIO_LOW    = 0x10,
+        PRIO_MEDIUM = 0x40,
+        PRIO_HIGH   = 0xc0
+    };
+
 public:
     Task() { }
+    ~Task() { }
+
+    // Yield to specific task
+    static void yield(Task& t) {
+        NoInterruptReent g;
+        activate(t);
+    }
+
+    // Activate a task: make it active and switch to it if its priority is higher than
+    // the current task.  Must be called with interrupts disabled.
+    static void activate(Task& t) {
+        t._state = STATE_ACTIVE;
+        if (_task && t._prio > _task->_prio)
+            switch_task(t);
+    }
+
+    // Deactivate and wait to become active
+    static void wait() {
+        NoInterruptReent g;
+        _task->_state = STATE_WAIT;
+        while (_task->_state != STATE_ACTIVE) {
+            Task *t = pick();  // Pick another task
+            if (t)
+                switch_task(*t);
+
+            // XXX else: enter LPM
+        }
+    }
+
+    // Launch task.
+    static void launch(Task& t, StartFunc start, void* stack) {
+        t._save.reg[REG_SP] = (uint16_t)stack;
+        t._save.reg[REG_PC] = (uint16_t)task_wrapper;
+        t._save.reg[REG_SR] = __get_SR_register();
+        t._state            = STATE_ACTIVE;
+
+        NoInterrupt g;
+        task_start = (uint16_t)start;
+
+        t._next = _task->_next;
+        _task->_next = &t;
+
+        switch_task(t);
+    }
+
+    // Boostrap: initialize and wrap current execution context in main task
+    static void bootstrap() {
+        NoInterrupt g;
+        _task = &_main;
+        _main._next = NULL;
+        _main._prio = PRIO_LOW;  // Should be changed if desired
+    }
+
+    // Set task priority
+    void set_prio(uint8_t prio) { _prio = prio; }
+
+private:
 
     // Prepare to suspend current task as per _task.  This returns 0; non-zero when
     // resumed.  All CPU register state change after this call is "lost".  Interrupts
     // must be disabled.
     static uint16_t prepare_to_suspend() {
         task_retval = 0;
-        task_reg_save = _task->_state.reg + 15;  // R15 save slot plus one
+        task_reg_save = _task->_save.reg + 15;  // R15 save slot plus one
 
         __asm("  mov.w  sp, &task_temp");    // Stash SP
         __asm("  mov.w  &task_reg_save, sp");    // SP now points to R15 save slot + 1
@@ -76,14 +152,14 @@ public:
         __asm("  push.w r4");
         __asm("  push.w sr");
         __asm("  push.w &task_temp");        // Stashed SP
-        __asm("  mov.w  r12, &task_temp2");
+        __asm("  mov.w  r12, &task_r12");
         __asm("  mov.w  sp, r12");
         __asm("  mov.w  &task_temp, sp");
         __asm("  mov.w  pc, -2(r12)");
 
         // On resume(), execution comes back here with values saved above, except for R12
         // which can be found in task_temp2.
-        __asm("  mov.w  &task_temp2, r12");
+        __asm("  mov.w  &task_r12, r12");
 
         return task_retval;
     }
@@ -92,11 +168,11 @@ public:
 #pragma FUNC_NEVER_RETURNS
     static void resume() {
         task_retval = 1;
-        task_reg_save = _task->_state.reg+1;   // SP save slot
+        task_reg_save = _task->_save.reg+1;   // SP save slot
 
         __asm("  mov.w  &task_reg_save, r12");
         __asm("  mov.w  @r12+, sp");
-        __asm("  push.w -4(r12)");            // Push saved PC for return
+        __asm("  mov.w  -4(r12), &task_leap"); // Set up saved PC
         __asm("  nop");                       // Required for SR change
         __asm("  mov.w  @r12+, sr");
         __asm("  nop");                       // Required for SR change
@@ -108,12 +184,11 @@ public:
         __asm("  mov.w  @r12+, r9");
         __asm("  mov.w  @r12+, r10");
         __asm("  mov.w  @r12+, r11");
-        __asm("  mov.w  @r12+, r13");        // Skip R12 without affecting SR
+        __asm("  mov.w  @r12+, &task_r12");
         __asm("  mov.w  @r12+, r13");
         __asm("  mov.w  @r12+, r14");
         __asm("  mov.w  @r12+, r15");
-        __asm("  mov.w  -8(r12), &task_temp2");
-        __asm("  ret");
+        __asm("  mov.w  &task_leap, pc");   // Weeee....
     }
 
     // Unguarded task switch.
@@ -136,33 +211,22 @@ public:
         }
     }
 
-    // Yield to specific task
-    static void yield(Task& t) {
-        NoInterruptReent g;
-        switch_task(t);
+    // Pick a task to run.  Returns highest priority active task, otherwise NULL
+    // if nothing is active.  Must be called with interrups disabled.
+    static Task* pick() {
+        Task* best = NULL;
+        uint8_t best_prio = 0;
+        for (Task* t = &_main; t; t = t->_next) {
+            if (t->_state == STATE_ACTIVE) {
+                if (!best || t->_prio > best_prio) {
+                    best = t;
+                    best_prio = t->_prio;
+                }
+            }
+        }
+        return best;
     }
 
-    // Launch task.
-    static void launch(Task& t, StartFunc start, void* stack) {
-        t._state.reg[REG_SP] = (uint16_t)stack;
-        t._state.reg[REG_PC] = (uint16_t)task_wrapper;
-        t._state.reg[REG_SR] = __get_SR_register();
-
-        NoInterrupt g;
-        task_start = (uint16_t)start;
-
-        switch_task(t);
-    }
-
-    // Boostrap: initialize and wrap current execution context in main task
-    static void bootstrap() {
-        NoInterrupt g;
-        _task = &_main;
-        //(void)prepare_to_suspend();
-        // Fall through, never resuming
-    }
-
-private:
 #pragma FUNC_NEVER_RETURNS
     static void task_wrapper() {
         const uint16_t start = task_start;
@@ -170,6 +234,10 @@ private:
         ((StartFunc)start)();
         for (;;);
     }
+
+private:
+    Task(const Task&);
+    Task& operator=(const Task&);
 };
 
 #endif // _TASK_H_
