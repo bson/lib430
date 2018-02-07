@@ -139,6 +139,8 @@ private:
         task_retval = 0;
         task_reg_save = _task->_save.reg + 15;  // R15 save slot plus one
 
+        // MSP430 can't have autoinc/autodec in dst operand, so use SP and push.
+
         __asm("  mov.w  sp, &task_temp");    // Stash SP
         __asm("  mov.w  &task_reg_save, sp");    // SP now points to R15 save slot + 1
         __asm("  push.w r15");              // Save R15...
@@ -153,15 +155,15 @@ private:
         __asm("  push.w r6");
         __asm("  push.w r5");
         __asm("  push.w r4");
-        __asm("  push.w sr");
-        __asm("  push.w &task_temp");        // Stashed SP
+        __asm("  push.w sr");                // ...through R2
+        __asm("  push.w &task_temp");        // Save stashed SP
         __asm("  mov.w  r12, &task_r12");
         __asm("  mov.w  sp, r12");
-        __asm("  mov.w  &task_temp, sp");
+        __asm("  mov.w  @sp, sp");           // Restore SP
         __asm("  mov.w  pc, -2(r12)");
 
         // On resume(), execution comes back here with values saved above, except for R12
-        // which can be found in task_temp2.
+        // which can be found in the global task_r12.
         __asm("  mov.w  &task_r12, r12");
 
         return task_retval;
