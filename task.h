@@ -73,10 +73,13 @@ public:
     Task() { }
     ~Task() { }
 
-    // Yield to specific task
+    // Yield to specific task, ignoring priority.  This permits a task to hand over
+    // temporarily to a lower priority task.  The lower priority one will run until
+    // it yields, activates a higher priority task, or enters wait.
     static void yield(Task& t) {
         NoInterruptReent g;
-        activate(t);
+        t._state = STATE_ACTIVE;
+        switch_task(t);
     }
 
     // Activate a task: make it active and switch to it if its priority is higher than
