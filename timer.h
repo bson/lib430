@@ -61,20 +61,20 @@ public:
     ACCESSOR(volatile uint16_t&, getCCR2, _CCR2);
     ACCESSOR(volatile uint16_t&, getIV, _IV);
 
-    void config(uint16_t source, uint16_t divider) {
+    static void config(uint16_t source, uint16_t divider) {
         CTL  = source|divider|MODE_STOP;
     }
 
-    void start(uint16_t mode, uint16_t count = 0) {
+    static void start(uint16_t mode, uint16_t count = 0) {
         CTL      = (CTL & ~MODE_MASK) | mode;
         TA_R     = 0;
     }
 
-    void stop() {
+    static void stop() {
         CTL = (CTL & ~MODE_MASK) | MODE_STOP;
     }
 
-    void set_counter(uint8_t num, uint16_t ctl, uint16_t val) {
+    static void set_counter(uint8_t num, uint16_t ctl, uint16_t val) {
         volatile uint16_t *timer_ctl = &TA_CCTL0;
         volatile uint16_t *timer_ccr = &TA_CCR0;
         timer_ccr[num] = val;

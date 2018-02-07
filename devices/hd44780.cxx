@@ -28,13 +28,13 @@ void Disp::init(bool backlight) {
     
     Device::init();
 
-    _sysTimer.delay(TIMER_MSEC(15));
+    SysTimer::delay(TIMER_MSEC(15));
     write_reg(IR, 0x3);
-    _sysTimer.delay(TIMER_MSEC(5));
+    SysTimer::delay(TIMER_MSEC(5));
     write_reg(IR, 0x3);
-    _sysTimer.delay(TIMER_USEC(1000));
+    SysTimer::delay(TIMER_USEC(1000));
     write_reg(IR, 0x2);
-    _sysTimer.delay(TIMER_USEC(CMD_DELAY));
+    SysTimer::delay(TIMER_USEC(CMD_DELAY));
 
     command(CMD_FUNCTIONSET | MODE_4BIT | LINES_2 | DOTS_5X8);
     command(CMD_DISPLAYCONTROL | DISPLAYON | CURSOROFF | BLINKOFF);

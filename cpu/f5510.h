@@ -32,7 +32,6 @@ typedef TimerA3<TB0CTL, TB0R, TB0CCTL0,
 
 // System needs a timer someplace.
 typedef SysTimerAB<TimerA3_0> SysTimer;
-extern SysTimer _sysTimer;
 
 extern volatile uint8_t _dummy_byte;
 

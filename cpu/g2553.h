@@ -14,7 +14,6 @@ typedef TimerA3<msp430::TA0CTL, msp430::TA0R, msp430::TA0CCTL0,
 
 // System needs a timer someplace.
 typedef TimerA3_0 SysTimer;
-extern SysTimer _sysTimer;
 
 typedef UCA<msp430::UCA0STAT, msp430::UCA0CTL0, msp430::UCA0CTL1,
             msp430::UCA0MCTL, msp430::UCA0BR0, msp430::UCA0BR1,

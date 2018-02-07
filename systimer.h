@@ -49,44 +49,41 @@ public:
         MAX_WAIT = (1UL << 30) - 1 // In SYSTIMER_CLOCKs
     };
 
-    void init() {
+    static void init() {
         Timer::config(Timer::SOURCE_SMCLK, Timer::SOURCE_DIV_8);
         Timer::start(Timer::MODE_CONT);
         Timer::set_counter(0, Timer::ENABLE_INTR, 0xf800);
     }
 
-    void delay(uint32_t ticks) {
+    static void delay(uint32_t ticks) {
         wait(future(ticks));
     }
 
-    void wait(const Future& future) {
+    static void wait(const Future& future) {
         while (!due(future))
             ;
     }
 
-    uint32_t ticks() const volatile {
+    static uint32_t ticks() {
         NoInterrupt g;
 
         return _time + Timer::TA_R;
     }
 
-    Future future(uint32_t t) volatile {
+    static Future future(uint32_t t) {
         return Future(ticks() + t);
     }
 
     // Calculate signed distance between current time and future, treated as a
     // sequence with a span of up 2^31 CLOCKs.
-    int32_t remainder(const Future& future) const volatile {
+    static int32_t remainder(const Future& future) {
         return int32_t(future.time() - ticks());
     }
 
     // True if future is due past due
-    bool due(const Future& future) const volatile {
+    static bool due(const Future& future) {
         return remainder(future) <= 0;
     }
-#if 0
-    static void _intr_(Timer::VECTOR0) ccr0_intr();
-#endif
 };
 
 #endif // _SYSTIMER_H_

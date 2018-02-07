@@ -33,8 +33,8 @@ bool I2CBus<_USCI,_SPEED>::start_write(uint8_t addr, uint8_t data) {
         USCI::TXBUF = data;
 
         // Wait for slave ACK (TXSTT clears)
-        const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
-        while ((USCI::CTL1 & USCI::TXSTT) && !_sysTimer.due(deadline))
+        const SysTimer::Future deadline = SysTimer::future(TIMER_MSEC(1));
+        while ((USCI::CTL1 & USCI::TXSTT) && !SysTimer::due(deadline))
             ;
 
         if (!(USCI::CTL1 & USCI::TXSTT) && !(USCI::STAT & USCI::NACKIFG)) {
@@ -68,8 +68,8 @@ void I2CBus<_USCI,_SPEED>::write_done() {
 
     // XXX Why doesn't this work?  It truncates transfers.
     //wait_done();
-	const SysTimer::Future deadline = _sysTimer.future(TIMER_USEC(100*100000/_SPEED));
-	while (!_sysTimer.due(deadline))
+	const SysTimer::Future deadline = SysTimer::future(TIMER_USEC(100*100000/_SPEED));
+	while (!SysTimer::due(deadline))
 		;
 }
 
@@ -80,8 +80,8 @@ bool I2CBus<_USCI,_SPEED>::wait_tx() {
         return true;
     }
 
-    const SysTimer::Future f = _sysTimer.future(TIMER_MSEC(3));
-    while (!_sysTimer.due(f)) {
+    const SysTimer::Future f = SysTimer::future(TIMER_MSEC(3));
+    while (!SysTimer::due(f)) {
         if (USCI::CPU_IFG & USCI::TXIFG) {
             return true;
         }
@@ -107,8 +107,8 @@ bool I2CBus<_USCI,_SPEED>::start_read(uint8_t slave, uint8_t* data) {
         USCI::CTL1 |= USCI::TXSTT;     // send start
 
         // Wait for slave ACK (TXSTT clears)
-        const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
-        while ((USCI::CTL1 & USCI::TXSTT) && !_sysTimer.due(deadline))
+        const SysTimer::Future deadline = SysTimer::future(TIMER_MSEC(1));
+        while ((USCI::CTL1 & USCI::TXSTT) && !SysTimer::due(deadline))
             ;
 
         if (USCI::STAT & USCI::NACKIFG) {
@@ -136,8 +136,8 @@ bool I2CBus<_USCI,_SPEED>::restart_read(uint8_t slave, uint8_t* data) {
 	USCI::CTL1 |= USCI::TXSTT;     // send start
 
 	// Wait for slave ACK (TXSTT clears)
-	const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
-	while ((USCI::CTL1 & USCI::TXSTT) && !_sysTimer.due(deadline))
+	const SysTimer::Future deadline = SysTimer::future(TIMER_MSEC(1));
+	while ((USCI::CTL1 & USCI::TXSTT) && !SysTimer::due(deadline))
 		;
 
 	if (USCI::STAT & USCI::NACKIFG) {
@@ -150,10 +150,10 @@ bool I2CBus<_USCI,_SPEED>::restart_read(uint8_t slave, uint8_t* data) {
 
 template <typename _USCI, uint32_t _SPEED>
 bool I2CBus<_USCI,_SPEED>::wait_rx() {
-    const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(1));
+    const SysTimer::Future deadline = SysTimer::future(TIMER_MSEC(1));
     while (!(USCI::CPU_IFG & USCI::RXIFG)
     	       && !(USCI::STAT & USCI::NACKIFG)
-    		   && !_sysTimer.due(deadline))
+    		   && !SysTimer::due(deadline))
     		;
 
     return USCI::CPU_IFG & USCI::RXIFG;
@@ -189,8 +189,8 @@ void I2CBus<_USCI,_SPEED>::read_done() {
 
 template <typename _USCI, uint32_t _SPEED>
 void I2CBus<_USCI,_SPEED>::wait_done() {
-	const SysTimer::Future deadline = _sysTimer.future(TIMER_USEC(100*100000/_SPEED));
-	while ((USCI::CPU_IFG & USCI::TXSTP) && !_sysTimer.due(deadline))
+	const SysTimer::Future deadline = SysTimer::future(TIMER_USEC(100*100000/_SPEED));
+	while ((USCI::CPU_IFG & USCI::TXSTP) && !SysTimer::due(deadline))
 		;
 }
 

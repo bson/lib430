@@ -33,13 +33,13 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGH
     };
 
     wcommand(CMD_EXIT_SLEEP_MODE);
-    _sysTimer.delay(TIMER_MSEC(500));
+    SysTimer::delay(TIMER_MSEC(500));
 
     // 10MHz * 34/3 = 113.33MHz
     wcommand_barr(CMD_SET_PLL_MN, 3, (const uint8_t*)"\x31\x02\x04");
 
     wcommand8(CMD_SET_PLL, 0x01);   // Enable PLL
-    _sysTimer.delay(TIMER_USEC(100));
+    SysTimer::delay(TIMER_USEC(100));
     wcommand8(CMD_SET_PLL, 0x03);   // Enable and use PLL
 
     static const uint8_t sequence[] = {

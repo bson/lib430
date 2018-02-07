@@ -69,13 +69,13 @@ public:
 			// XXX handle this instead by spending up to MAX_WRITE_TIME trying
 			// to read the page back, verifying it wrote correctly.  The read
 			// will fail until the write has finished.
-			_sysTimer.delay(TIMER_MSEC(MAX_WRITE_TIME+1));
+			SysTimer::delay(TIMER_MSEC(MAX_WRITE_TIME+1));
 		}
 		if (len) {
 			if (!write_bytes(loc, data, len)) {
 				return false;
 			}
-			_sysTimer.delay(TIMER_MSEC(MAX_WRITE_TIME+1));
+			SysTimer::delay(TIMER_MSEC(MAX_WRITE_TIME+1));
 		}
 		return true;
 	}

@@ -22,11 +22,11 @@ bool ADC<Device>::wait_conv() {
 	uint8_t data_lo;
 
 	Device::transmit(REG_CONF);
-	const SysTimer::Future deadline = _sysTimer.future(TIMER_MSEC(to[_sps]));
+	const SysTimer::Future deadline = SysTimer::future(TIMER_MSEC(to[_sps]));
 	bool ok = true;
 	if (Device::start_read(&data_hi) && Device::read(&data_lo)) {
-		while ((data_hi & (CONF_OS >> 8)) && !_sysTimer.due(deadline)) {
-			_sysTimer.delay(TIMER_USEC(500));
+		while ((data_hi & (CONF_OS >> 8)) && !SysTimer::due(deadline)) {
+			SysTimer::delay(TIMER_USEC(500));
 			if (!Device::read(&data_hi) || !Device::read(&data_lo)) {
 				ok = false;
 				break;

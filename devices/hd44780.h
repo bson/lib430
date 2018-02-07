@@ -75,17 +75,17 @@ public:
     // Issue command (IR)
     void command(uint8_t cmd) {
         write_reg(IR, cmd);
-        _sysTimer.delay(TIMER_USEC(CMD_DELAY));
+        SysTimer::delay(TIMER_USEC(CMD_DELAY));
     }
 
     void clear() {
         command(CMD_CLEARDISPLAY);
-        _sysTimer.delay(TIMER_USEC(1500));
+        SysTimer::delay(TIMER_USEC(1500));
     }
 
     void home() {
         command(CMD_RETURNHOME);
-        // _sysTimer.delay(TIMER_USEC(1500));
+        // SysTimer::delay(TIMER_USEC(1500));
     }
 
     void setpos(uint8_t l, uint8_t p) {
@@ -105,7 +105,7 @@ public:
 
     void force_inline putc(char c) {
         write_reg(DR, (uint8_t)c);
-        //_sysTimer.delay(TIMER_USEC(DATA_DELAY));
+        //SysTimer::delay(TIMER_USEC(DATA_DELAY));
     }
 
     void puts(const char* s) {

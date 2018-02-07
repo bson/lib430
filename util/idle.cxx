@@ -12,11 +12,11 @@ void Idle::add(Activity* activity) {
 }
 
 void Idle::work() {
-	if (_flags.active && _sysTimer.due(_next_due)) {
+	if (_flags.active && SysTimer::due(_next_due)) {
 		_flags.in_work = true;
 		// Activate all that are due - could be multiple
 		for (Activity* a = _activity; a; a = a->_next) {
-			if (a->_flags.enabled && _sysTimer.due(a->_due)) {
+			if (a->_flags.enabled && SysTimer::due(a->_due)) {
 				if (a->_flags.repeating) {
 					a->_due.adjust(a->_interval);
 				} else {
