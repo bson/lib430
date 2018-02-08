@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "usb_dev.h"
+#include "systimer.h"
 
 // Simple USBTMC implementation, sitting on top of the simple USB device.
 // Implements the usb488 subclass

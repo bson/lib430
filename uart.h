@@ -13,7 +13,7 @@ class Uart {
     Deque<uint8_t, UART_RX_BUF> _rxbuf;
 #endif
 #ifdef UART_TX_BUF
-    bool _txbusy;   // Transmission in progress
+    volatile bool _txbusy;   // Transmission in progress
 #endif
     bool _nl;
 public:
@@ -24,7 +24,7 @@ public:
     void init() {
         USCI::CTL1 |= USCI::SWRST;
         USCI::CTL1 &= ~USCI::SWRST;
-        USCI::CTL1 = USCI::SSEL1; // SMCLK (0b10)
+        USCI::CTL1 = USCI::SSEL0; // ACLK (0b10)
 
         USCI::STAT = 0;
         USCI::CPU_IE2 &= ~(USCI::TXIE | USCI::RXIE);
@@ -149,6 +149,12 @@ public:
 #endif
     }
 
+    // Check if TX is busy
+#ifdef UART_TX_BUF
+    bool txbusy() { return _txbusy; }
+#else
+    bool txbusy() { return false; }
+#endif
 };
 
 #endif // _UART_H_

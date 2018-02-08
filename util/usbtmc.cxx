@@ -231,7 +231,11 @@ void USBTMC<Delegate>::service() {
     while ((event = USB::pending_event()) != USB::EVENT_NONE) {
         switch (event) {
         case USB::EVENT_RESET:
-            DMSG("USBTMC: reset by host\n");
+            DMSG("USBTMC: reset by host or disconnect\n");
+            // Delay to avoid thrashing on reset
+            // XXX should use task sleep
+            SysTimer::delay(TIMER_SEC(1));
+            USB::start();
             continue;
 
         case USB::EVENT_PLL_OOL:
@@ -239,7 +243,7 @@ void USBTMC<Delegate>::service() {
             continue;
 
         case USB::EVENT_INACTIVE:
-            DMSG("USBTMC: inactive (disconnected)\n");
+            DMSG("USBTMC: inactive (started)\n");
             Delegate::disconnect();
             continue;
 
@@ -260,6 +264,16 @@ void USBTMC<Delegate>::service() {
 
         case USB::EVENT_STALL:
             DMSG("USBTMC: stalled\n");
+            continue;
+
+        case USB::EVENT_SUSPEND:
+            DMSG("USBTMC: suspended\n");
+            continue;
+
+        case USB::EVENT_RESUME:
+            DMSG("USBTMC: resuming\n");
+            USB::resume();
+            DMSG("USBTMC: resumed\n");
             continue;
 
         case USB::EVENT_SETADDR:

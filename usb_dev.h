@@ -8,61 +8,6 @@
 //  One in+out endpoint pair per interface
 //  English language strings only
 
-// Everything is static as it's assumed there's only one USB controller.
-// However, member-style access is used wherever feasible so the code isn't
-// dependent on this - it's purely an optimization to eliminate the this ptr.
-
-// State management:
-//  INACTIVE - on reset(), the device enters the INACTIVE state.  In this state,
-//             the PLL is disabled and the module off (XXX?), all interruts
-//             disabled, *except* detection of VBus.  It can remain in this state
-//             indefinitely.  There is delay at the beginning of this, of 50ms, to
-//             permit things to settle since we can fall back here from so many
-//             different conditions.  Interrupts enabled: VBusOn
-//             PUR is off
-//  When VBus is detected, the module is turned on, the LDO is enabled, the
-//  pull-up resistor (on DP) is activated to request enumeration.
-//  ANNOUNCE - after the PUR is activated we enter the ANNOUNCE state and enable
-//             interrupts for VBusOff, and Resume.  We wait for Resume for one
-//             second. (NYI)  If it's not forthcoming, we reset() and return to INACTIVE.
-//             if VBus is still there we'll end up repeating the announcement
-//             immediastely (with reset USB module), effectively pulsing DP.
-//             Interrupts enabled: VBusOff, Resume, Reset
-//  When see get a Resume event from the host we activate the PLL and enter the
-//  next state.
-//  READY   -  the device is expecting enumeration and configuration
-//             The PLL is running.  Interrupts: SETUP, VBusOff, Suspend, PLL OOL, Reset
-//             On VBusOff we reset() back to INACTIVE
-//             On Suspend we suspend() back to ANNOUNCE
-//             On SETUP, we parse and handle the request
-//             PLL OOL is passed to the Class for processing
-//             On entry to this state we zero USB buffer mem, configure and enable
-//             all endpoints.
-//  ACTIVE  -  We have had a configuration chosen and (hopefully) an address set,
-//             but the latter is up to the host.
-//             Interrupts: VBusOff, Suspend, SETUP, EPx, PLL OOL, Reset
-//             VBusOff reset()s back to INACTIVE
-//             Suspend suspend()s back to ANOUNCE
-//             SETUP parses control messages
-//             PLL errors are logged
-//             Reset returns to inactive
-//
-// Functions:
-//    reset() called to reset USB module and driver.  => INACTIVE
-//    suspend() disables PLL and calls announce().  => ANNOUNCE.
-//    announce() called to pull PUR to announce our presence to the host. => ANNOUNCE
-//    ready() called on resume interrupt to enter ready state. => READY
-//
-// Important events:
-//    EVENT_INACTIVE - entered the INACTIVE state.  No physical host connection.
-//    EVENT_ANNOUNCE - Have a physical connection.
-//    EVENT_READY    - this requires Class action:
-//             Call ready_ack() (this enables the PLL)
-//             With interrupts disabled, add endpoints with add_endpoint().
-//             This is to prevent advancing to the ACTIVE state and receiving
-//             traffic on endpoints before they have been enabled.
-//    EVENT_ACTIVE   - configured and ready.
-//
 
 #include "common.h"
 #include "config.h"
@@ -222,6 +167,8 @@ public:
         EVENT_PLL_SOR  = 0x200, // PLL signal or range error (notification)
         EVENT_EP0_OUT  = 0x400, // Received data on EP0 (control data)
         EVENT_INACTIVE = 0x800, // Disconnected, waiting for physical connection
+        EVENT_SUSPEND  = 0x1000, // Suspended
+        EVENT_RESUME   = 0x2000, // Resumed
 
         // Data receive events
         EVENT_EP1_OUT = 0x10000,
@@ -311,12 +258,13 @@ public:
     }
 
     // Initialize
-    static void init() { reset(); }
+    static void init() { }
 
     static void reset();
-    static void suspend();
-    static void resume();
-    static void announce();
+    static void start();
+    static void suspend();    // Callable by ISR
+    static void resume();     // Called by service task
+    static void announce();   // Got VBus ON
     static void ready_ack();  // Ready event has been processed by Class
 
     // Enable an endpoint and allocate buffer for it
@@ -374,7 +322,7 @@ private:
     class UnlockConf {
     public:
         UnlockConf() { USBKEYPID = USBKEY; }
-        ~UnlockConf() { USBKEYPID = ~0; }
+        ~UnlockConf() { USBKEYPID = 0x9600; }
     };
 
     static void disable_pll();

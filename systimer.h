@@ -50,7 +50,7 @@ public:
     };
 
     static void init() {
-        Timer::config(Timer::SOURCE_SMCLK, Timer::SOURCE_DIV_8);
+        Timer::config(Timer::SOURCE_ACLK, Timer::SOURCE_DIV_8);
         Timer::start(Timer::MODE_CONT);
         Timer::set_counter(0, Timer::ENABLE_INTR, 0xf800);
     }
