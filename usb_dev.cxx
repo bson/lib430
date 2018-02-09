@@ -4,6 +4,7 @@
 #include "usb_dev.h"
 #include "systimer.h"
 #include "task.h"
+#include "util/event.h"
 
 #include <strings.h>
 
@@ -19,7 +20,7 @@ uint8_t USB::_nstrings;
 
 uint16_t USB::_plldiv;
 
-volatile uint32_t USB::_events;  // Event mask
+Event<uint32_t> USB::_events;  // Event mask
 
 volatile USB::State USB::_state;
 
@@ -33,7 +34,7 @@ Task* USB::_task;
 void USB::reset() {
     NoInterruptReent g;
 
-    _events = EVENT_RESET;
+    _events.set(EVENT_RESET);
 
     USBIFG     = 0;
     USBIE      = 0;
@@ -48,7 +49,7 @@ void USB::start() {
     NoInterruptReent g;
 
     _state = STATE_INACTIVE;
-    _events &= EVENT_RESET; // Drop all pending events except EVENT_RESET
+    _events.set(_events.events() & EVENT_RESET); // Drop all pending events except EVENT_RESET
 
     UnlockConf u;
 
@@ -76,12 +77,12 @@ void USB::start() {
     USBIEPIE   = 0;      // Disable EP intrs
     USBOEPIE   = 0;      // Disable EP intrs
 
-    _events = EVENT_INACTIVE;
+    _events.set(EVENT_INACTIVE);
 }
 
 void USB::announce() {
     NoInterruptReent g;
-    post_event(EVENT_READY);
+    events().post(EVENT_READY);
 }
 
 void USB::suspend() {
@@ -96,7 +97,7 @@ void USB::suspend() {
     USBPWRCTL |= VBOFFIE;
     USBIE      = RSTRIE | RESRIE;
 
-    post_event(EVENT_SUSPEND);
+    events().post(EVENT_SUSPEND);
 }
 
 void USB::resume() {
@@ -282,7 +283,7 @@ void USB::stall(int ep) {
     *get_conf(ep, DIR_OUT) |= STALL;
     *get_conf(ep, DIR_IN)  |= STALL;
 
-    post_event(EVENT_STALL);
+    events().post(EVENT_STALL);
 }
 
 void USB::input_isr(uint16_t endpoint) {
@@ -291,7 +292,7 @@ void USB::input_isr(uint16_t endpoint) {
           EVENT_EPx_IN, EVENT_EPx_IN, EVENT_EPx_IN, EVENT_EPx_IN
     };
 
-    post_event(evmap[endpoint]);
+    events().post(evmap[endpoint]);
 }
 
 void USB::output_isr(uint16_t endpoint) {
@@ -300,7 +301,7 @@ void USB::output_isr(uint16_t endpoint) {
           EVENT_EPx_OUT, EVENT_EPx_OUT, EVENT_EPx_OUT, EVENT_EPx_OUT
     };
 
-    post_event(evmap[endpoint]);
+    events().post(evmap[endpoint]);
 }
 
 static uint8_t buf[64];
@@ -320,7 +321,7 @@ void USB::device_req_isr(const SetupRequest* setup) {
         // Address is set after ack and status
         _addr = setup->value & 0x7f;
         USBFUNADR = _addr;
-        post_event(EVENT_SETADDR);
+        events().post(EVENT_SETADDR);
         break;
 
     case REQ_GET_DESC: {
@@ -401,7 +402,7 @@ void USB::device_req_isr(const SetupRequest* setup) {
         stall(0);
         break;
     default:
-        post_event(EVENT_SETUPHK);
+        events().post(EVENT_SETUPHK);
         break;
     }
 }
@@ -474,7 +475,7 @@ void USB::setup_isr() {
 
     if (type == 1 || type == 2) {
         // Class/vendor based request... pass on for service task to handle
-        post_event(EVENT_SETUPHK);
+        events().post(EVENT_SETUPHK);
         return;
     }
     if (type != 0) {
@@ -503,7 +504,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
     // effectively ends the transaction.  For this reason, the setup command needs to
     // be handled in the ISR.
     if (USBIFG & SETUPIFG) {
-        USB::post_event(USB::EVENT_SETUP);
+        USB::events().post(USB::EVENT_SETUP);
 
         USB::setup_isr();
 
@@ -522,17 +523,17 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
         case USBVECINT_SETUP_PACKET_RECEIVED:
             // XXX for debugging, shouldn't get here
             USB::setup_isr();
-            USB::post_event(USB::EVENT_SETUP);
+            USB::events().post(USB::EVENT_SETUP);
             break;
         case USBVECINT_RSTR:
-            USB::post_event(USB::EVENT_RESET);
+            USB::events().post(USB::EVENT_RESET);
             USB::reset();
             break;
         case USBVECINT_SUSR:
             USB::suspend();
             break;
         case USBVECINT_RESR:
-            USB::post_event(USB::EVENT_RESUME);
+            USB::events().post(USB::EVENT_RESUME);
             break;
         case USBVECINT_PWR_DROP:
             USB::reset();
@@ -553,11 +554,11 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
             USB::stall(0);
             break;
         case USBVECINT_PLL_LOCK:
-            USB::post_event(USB::EVENT_PLL_OOL);
+            USB::events().post(USB::EVENT_PLL_OOL);
             break;
         case USBVECINT_PLL_SIGNAL:
         case USBVECINT_PLL_RANGE:
-            USB::post_event(USB::EVENT_PLL_SOR);
+            USB::events().post(USB::EVENT_PLL_SOR);
             break;
         default:
             if (source >= USBVECINT_INPUT_ENDPOINT1 && source <= USBVECINT_INPUT_ENDPOINT7) {
@@ -583,8 +584,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
         }
     }
 
-    if (USB::_task && USB::_events)
-        Task::activate(*USB::_task);
+    USB::events().wake();
 }
 
 #endif // __MSP430_HAS_USB__

@@ -110,7 +110,7 @@ public:
             // XXX enter LPM
     }
 
-    // Task wake. Must be called with interrupts disabled. Callable from an ISR.
+    // Wake sleeping task. Must be called with interrupts disabled. Callable from an ISR.
     static void wake(Task& t) {
         t._state = STATE_ACTIVE;
 
@@ -169,6 +169,9 @@ public:
 
     // Set task priority
     void set_prio(uint8_t prio) { _prio = prio; }
+
+    // Return self
+    static Task* self() { return _task; }
 
 private:
 

@@ -14,6 +14,7 @@
 #include "systimer.h"
 #include "cpu/cpu.h"
 #include "task.h"
+#include "util/event.h"
 
 #ifdef __MSP430_HAS_USB__
 
@@ -206,7 +207,7 @@ private:
     static uint16_t _plldiv;
 
     static volatile State _state;
-    static volatile uint32_t _events;  // Event mask
+    static Event<uint32_t> _events;  // Event object
 
     static uint16_t _brk;
     static uint8_t _neps;     // Number of endpoint pairs
@@ -236,31 +237,12 @@ public:
         _brk = 0;
         _neps = 0;
         _state = STATE_INACTIVE;
-        _events = 0;
         _task = NULL;
     }
 
-    // Get next event, or 0 if none; removes event reuturned from pending set.
-    static uint32_t pending_event(bool wait = false) {
-       while (!_events) {
-           if (wait) {
-               Task::wait();
-           } else  {
-               return 0;
-           }
-       }
 
-       NoInterrupt g;
-
-        const uint32_t pending = _events & ~(_events - 1);
-        _events &= ~pending;
-        return pending;
-    }
-
-    // Post an event.  Interrupts need to be disabled.
-    static void post_event(uint32_t event) {
-        _events |= event;
-    }
+    // Get event object
+    static Event<uint32_t>& events() { return _events; }
 
     // Initialize
     static void init() { }
