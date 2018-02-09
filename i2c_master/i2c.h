@@ -12,7 +12,7 @@ public:
 public:
     typedef _USCI USCI;
 
-    enum { PRESCALE = SMCLK/_SPEED };
+    enum { PRESCALE = ACLK/_SPEED };
 
     // Begin a write transaction and write the first byte.
     static bool start_write(uint8_t addr, uint8_t data);

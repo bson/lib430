@@ -84,16 +84,21 @@ public:
     // it yields, activates a higher priority task, or enters wait.
     static void yield(Task& t) {
         NoInterruptReent g;
-        t._state = STATE_ACTIVE;
-        switch_task(t);
+        if (t._state != STATE_SLEEP)  {
+            t._state = STATE_ACTIVE;
+            switch_task(t);
+        }
     }
 
     // Activate a task: make it active and switch to it if its priority is higher than
     // the current task.  Must be called with interrupts disabled.
     static void activate(Task& t) {
-        t._state = STATE_ACTIVE;
-        if (_task && (t._prio > _task->_prio || _task->_state != STATE_ACTIVE))
-            switch_task(t);
+        if (t._state == STATE_WAIT) {
+            t._state = STATE_ACTIVE;
+
+            if (_task && (t._prio > _task->_prio || _task->_state != STATE_ACTIVE))
+                switch_task(t);
+        }
     }
 
     // Deactivate and wait to become active
@@ -112,14 +117,16 @@ public:
 
     // Wake sleeping task. Must be called with interrupts disabled. Callable from an ISR.
     static void wake(Task& t) {
-        t._state = STATE_ACTIVE;
+        if (t._state == STATE_SLEEP) {
+            t._state = STATE_ACTIVE;
 
-        Task* s = next_sleeper();
-        if (s) {
-            SysTimer::set_sleeper_task(s, s->_sleep);
-        }
-        if (t._prio > _task->_prio || _task->_state != STATE_ACTIVE) {
-            switch_task(t);
+            Task* s = next_sleeper();
+            if (s) {
+                SysTimer::set_sleeper_task(s, s->_sleep);
+            }
+            if (t._prio > _task->_prio || _task->_state != STATE_ACTIVE) {
+                switch_task(t);
+            }
         }
     }
 

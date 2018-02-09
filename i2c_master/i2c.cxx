@@ -4,8 +4,6 @@
 #include "i2c_master/i2c.h"
 #include "timer.h"
 
-#pragma CHECK_ULP("none")
-
 template <typename _USCI, uint32_t _SPEED>
 void I2CBus<_USCI,_SPEED>::init() {
     // Initialize
@@ -13,7 +11,7 @@ void I2CBus<_USCI,_SPEED>::init() {
     USCI::CTL1 &= ~USCI::SWRST;
 
     USCI::CTL0 = USCI::MODE_3 | USCI::SYNC | USCI::MST;
-    USCI::CTL1 = USCI::SSEL_2;   // SMCLK
+    USCI::CTL1 = USCI::SSEL_ACLK;
 
     USCI::BR0   = PRESCALE;
     USCI::BR1   = PRESCALE >> 8;

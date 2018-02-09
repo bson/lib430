@@ -43,10 +43,8 @@ public:
         TXNACK = UCTXNACK,
         TXSTP = UCTXSTP,
         TXSTT = UCTXSTT,
-        SSEL_0 = UCSSEL_0,
-        SSEL_1 = UCSSEL_1,
-        SSEL_2 = UCSSEL_2,
-        SSEL_3 = UCSSEL_3,
+        SSEL_ACLK = UCSSEL__ACLK,
+        SSEL_SMCLK = UCSSEL__SMCLK,
         SWRST = UCSWRST,
         SYNC = UCSYNC,
 

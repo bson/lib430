@@ -30,12 +30,17 @@ uint8_t USB::_addr;     // Bus address 1-127
 
 Task* USB::_task;
 
+extern void xprintf(const char *fmt, ...);
 
 void USB::reset() {
     NoInterruptReent g;
 
     _events.set(EVENT_RESET);
 
+    UnlockConf u;
+
+    USBPWRCTL  = 0;  // USB9 errata
+    USBPHYCTL  = PUSEL;
     USBIFG     = 0;
     USBIE      = 0;
     USBPLLIR   = 0;      // Disable IE, clear IFG
@@ -57,6 +62,7 @@ void USB::start() {
 
     // Errata: USB9
     USBPWRCTL  = 0;
+    __delay_cycles(MCLK / 1000 * 5);
 
     USBPLLIR  &= ~(USBOOLIE | USBLOSIE | USBOORIE);
     USBPLLCTL &= ~UPLLEN; // Turn off PLL
@@ -89,8 +95,6 @@ void USB::suspend() {
     NoInterruptReent g;
     UnlockConf u;
 
-//    USBCTL    &= ~FEN;    // Disable USB transceiver
-
     USBPLLIR   = 0;       // Disable PLL IE, clear IFG
     USBPLLCTL &= ~UPLLEN; // Turn off PLL
     USBPWRCTL &= ~VBONIE;
@@ -109,15 +113,15 @@ void USB::resume() {
     // Interrupts: VBusOff, Reset, Suspend, Setup, Setup overwrite, PLL
     USBPWRCTL &= ~VBONIE;
     USBPWRCTL |= VBOFFIE;
-    USBIE      = RSTRIE | /* SUSRIE | */ SETUPIE | STPOWIE;
+    USBIE      = RSTRIE | SUSRIE | SETUPIE | STPOWIE;
     USBPLLIR  |= USBOOLIE | USBLOSIE | USBOORIE;
-//    USBCTL    |= FEN;     // Enable USB transceiver
+    USBCTL    |= FEN;     // Enable USB transceiver
 }
 
 void USB::ready_ack() {
     enable_pll();
 
-    __delay_cycles(MCLK / 1000 / 50); // 20us
+    Task::sleep(TIMER_USEC(100));
 
     NoInterruptReent g;
 
@@ -125,7 +129,6 @@ void USB::ready_ack() {
     //memset((void*)&USBSTABUFF, 0, &USBTOPBUFF-&USBSTABUFF /*+24*/);  // Clear all USB buffer mem
 
     UnlockConf u;
-    USBPHYCTL  = PUSEL;
 
     // Interrupts: VBusOff, Reset, Suspend, Setup, Setup overwrite, PLL
     USBPWRCTL &= ~VBONIE;
@@ -152,7 +155,7 @@ void USB::ready_ack() {
         *get_conf(ep, DIR_IN)  = 0;
     }
 
-    USBIE    = RSTRIE | /* SUSRIE | */ SETUPIE | STPOWIE;
+    USBIE    = RSTRIE | SUSRIE | SETUPIE /*| STPOWIE */;
     USBPLLIR = USBOOLIE | USBLOSIE | USBOORIE;  // Also clears pending PLL IFGs
 
     USBCTL  |= FEN;    // Enable USB transceiver
@@ -183,7 +186,7 @@ void USB::enable_pll() {
     USBPLLDIVB = _plldiv;
     USBPLLCTL  = UPLLEN | UPFDEN;
 
-    __delay_cycles(MCLK / 1000 * 5);  // 5ms delay
+//    __delay_cycles(MCLK / 1000 * 5);  // 5ms delay
 //    UCSCTL4 = ucs4;    // Restore clock sources
 
     do {
@@ -192,6 +195,7 @@ void USB::enable_pll() {
     } while (USBPLLIR);
 
     USBCNF |= USB_EN;   // USB module memory access enable
+    USBCTL  |= FEN;    // Enable USB transceiver
 }
 
 void USB::add_endpoint(int n, uint16_t rxbuf_size, uint16_t txbuf_size) {

@@ -45,13 +45,11 @@ class NoInterruptReent {
     uint16_t _saved;
 public:
     NoInterruptReent() {
-//        _saved = __get_interrupt_state();
         _saved = __get_SR_register() & GIE;
         __bic_SR_register(GIE);
     }
 
     ~NoInterruptReent() {
-//        __set_interrupt_state(_saved);
         __bis_SR_register(_saved);
     }
 };

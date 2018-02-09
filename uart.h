@@ -24,7 +24,7 @@ public:
     void init() {
         USCI::CTL1 |= USCI::SWRST;
         USCI::CTL1 &= ~USCI::SWRST;
-        USCI::CTL1 = USCI::SSEL0; // ACLK (0b10)
+        USCI::CTL1 = USCI::SSEL_ACLK;
 
         USCI::STAT = 0;
         USCI::CPU_IE2 &= ~(USCI::TXIE | USCI::RXIE);

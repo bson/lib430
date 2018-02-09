@@ -44,8 +44,9 @@ public:
         MST = UCMST,
 
         // UART-Mode Bits
-        SSEL1 = UCSSEL1,
-        SSEL0 = UCSSEL0,
+        SSEL_ACLK = 0x40,
+        SSEL_SMCLK = 0x80,
+
         RXEIE = UCRXEIE,
         BRKIE = UCBRKIE,
         DORM = UCDORM,
