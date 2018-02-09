@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include "common.h"
+#include "systimer.h"
+#include "cpu/cpu.h"
+
 
 // Simple task abstraction.  Its main purpose is to support a simple
 // model where there is a single main or "idle" context, and additional
@@ -55,11 +58,14 @@ private:
     uint8_t _prio;       // Priority; higher is higher
     uint8_t _state;
 
+    SysTimer::Future _sleep;
+
 public:
     // Task states
     enum {
         STATE_ACTIVE = 0,  // Runnable
-        STATE_WAIT         // Inactive
+        STATE_WAIT,        // Inactive
+        STATE_SLEEP        // Sleeping into _sleep
     };
 
     // Task priorities (just a few points)
@@ -86,21 +92,52 @@ public:
     // the current task.  Must be called with interrupts disabled.
     static void activate(Task& t) {
         t._state = STATE_ACTIVE;
-        if (_task && t._prio > _task->_prio)
+        if (_task && (t._prio > _task->_prio || _task->_state != STATE_ACTIVE))
             switch_task(t);
     }
 
     // Deactivate and wait to become active
     static void wait() {
-        NoInterruptReent g;
-        _task->_state = STATE_WAIT;
-        while (_task->_state != STATE_ACTIVE) {
+        {
+            NoInterruptReent g;
+            _task->_state = STATE_WAIT;
             Task *t = pick();  // Pick another task
             if (t)
                 switch_task(*t);
-
-            // XXX else: enter LPM
         }
+        while (_task->_state != STATE_ACTIVE)
+            ;
+            // XXX enter LPM
+    }
+
+    // Task wake. Must be called with interrupts disabled. Callable from an ISR.
+    static void wake(Task& t) {
+        t._state = STATE_ACTIVE;
+
+        Task* s = next_sleeper();
+        if (s) {
+            SysTimer::set_sleeper_task(s, s->_sleep);
+        }
+        if (t._prio > _task->_prio || _task->_state != STATE_ACTIVE) {
+            switch_task(t);
+        }
+    }
+
+    // Task sleep.
+    static void sleep(const SysTimer::Future& f) {
+        {
+            NoInterruptReent g;
+            _task->_state = STATE_SLEEP;
+            _task->_sleep = f;
+            Task* s = next_sleeper();
+            SysTimer::set_sleeper_task(s, s->_sleep);
+            Task *t = pick();  // Pick another task
+            if (t)
+                switch_task(*t);
+        }
+        while (_task->_state != STATE_ACTIVE)
+            ;
+           // XXX enter LPM
     }
 
     // Launch task.
@@ -207,7 +244,7 @@ private:
     // This function can be used to switch to a specific service task at the end of an ISR.
     static void switch_task(Task& t) {
         // _task can be NULL before we're bootstrapped, yet we may enter an interrupt
-        // handler during init.  Just ignore.  Also don't switch to the active task.
+        // handler during init.  Just ignore.  Also don't switch to the task already on CPU.
         if (_task && &t != _task) {
             if (!prepare_to_suspend()) {
                 _task = &t;
@@ -230,6 +267,21 @@ private:
             }
         }
         return best;
+    }
+
+    // Find next due sleeper
+    static Task* next_sleeper() {
+        Task* next = NULL;
+        SysTimer::Future next_due;
+        for (Task* t = &_main; t; t = t->_next) {
+            if (t->_state == STATE_SLEEP) {
+                if (!next || t->_sleep < next_due) {
+                    next = t;
+                    next_due = t->_sleep;
+                }
+            }
+        }
+        return next;
     }
 
 #pragma FUNC_NEVER_RETURNS

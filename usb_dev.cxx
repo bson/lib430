@@ -38,8 +38,10 @@ void USB::reset() {
     USBIFG     = 0;
     USBIE      = 0;
     USBPLLIR   = 0;      // Disable IE, clear IFG
-    USBPLLCTL &= ~UPLLEN; // Turn off PLL
     USBFUNADR  = 0;
+
+    // Note: we leave the PLL running if it's on to avoid spurious bus errors in the
+    // USB task.
 }
 
 void USB::start() {
@@ -106,7 +108,7 @@ void USB::resume() {
     // Interrupts: VBusOff, Reset, Suspend, Setup, Setup overwrite, PLL
     USBPWRCTL &= ~VBONIE;
     USBPWRCTL |= VBOFFIE;
-    USBIE      = RSTRIE | SUSRIE | SETUPIE | STPOWIE;
+    USBIE      = RSTRIE | /* SUSRIE | */ SETUPIE | STPOWIE;
     USBPLLIR  |= USBOOLIE | USBLOSIE | USBOORIE;
 //    USBCTL    |= FEN;     // Enable USB transceiver
 }
@@ -149,7 +151,7 @@ void USB::ready_ack() {
         *get_conf(ep, DIR_IN)  = 0;
     }
 
-    USBIE    = RSTRIE | SUSRIE | SETUPIE | STPOWIE;
+    USBIE    = RSTRIE | /* SUSRIE | */ SETUPIE | STPOWIE;
     USBPLLIR = USBOOLIE | USBLOSIE | USBOORIE;  // Also clears pending PLL IFGs
 
     USBCTL  |= FEN;    // Enable USB transceiver

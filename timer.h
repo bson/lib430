@@ -80,6 +80,11 @@ public:
         timer_ccr[num] = val;
         timer_ctl[num] = ctl;
     }
+
+    static void set_ccr(uint8_t num, uint16_t val) {
+        volatile uint16_t *timer_ccr = &TA_CCR0;
+        timer_ccr[num] = val;
+    }
 };
 
 #endif // _TIMER_H_

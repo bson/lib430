@@ -234,7 +234,7 @@ void USBTMC<Delegate>::service() {
             DMSG("USBTMC: reset by host or disconnect\n");
             // Delay to avoid thrashing on reset
             // XXX should use task sleep
-            SysTimer::delay(TIMER_SEC(1));
+            Task::sleep(SysTimer::future(TIMER_SEC(1)));
             USB::start();
             continue;
 

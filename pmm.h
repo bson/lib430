@@ -5,7 +5,7 @@
 
 namespace PMM {
 
-// Issue reset
+// Issue reset.  Mainly for use by panic().
 static inline void reset() {
     PMMCTL0 |= PMMSWPOR;
 }
@@ -19,13 +19,6 @@ static inline void set_vcore(uint16_t level)
 {
     // Open PMM registers for write access
     PMMCTL0_H = 0xa5;
-
-    // Make sure no flags are set for iterative sequences
-    while ((PMMIFG & SVSMHDLYIFG) == 0)
-        ;
-
-    while ((PMMIFG & SVSMLDLYIFG) == 0)
-        ;
 
     // Set SVS/SVM high side new level
     SVSMHCTL = SVSHE + SVSHRVL0 * level + SVMHE + SVSMHRRL0 * level;
@@ -43,7 +36,7 @@ static inline void set_vcore(uint16_t level)
     // Set VCore to new level
     PMMCTL0_L = PMMCOREV0 * level;
 
-    // Wait till new level reached
+    // Wait until new level reached
     if ((PMMIFG & SVMLIFG)) {
         while ((PMMIFG & SVMLVLRIFG) == 0)
             ;

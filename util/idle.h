@@ -15,6 +15,7 @@ protected:
 
 	static Activity* _activity;        // Activity chain
 	static SysTimer::Future _next_due; // Next due
+	static int32_t _deadline_margin;  // Don't start work within deadline margin
 	static struct flags_t {
 		bool active:1;               // Any activity due
 		bool in_work:1;              // In work loop
@@ -24,6 +25,10 @@ public:
 	static void add(Activity* activity);
 	static void work();              // Do idle work if any
 	static void update();            // Update _next_due
+	static void loop(const SysTimer::Future& f);   // Main idle "loop" - sleep or work until f
+	static bool have_work() { return _activity != NULL; }
+	static const SysTimer::Future& next_due() { return _next_due; }
+	static void set_deadline_margin(int32_t margin) { _deadline_margin = margin; }
 } _packed_;
 
 class Activity {

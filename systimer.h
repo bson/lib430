@@ -13,8 +13,6 @@ class SysTimerAB: public _BaseTimer {
 public:
     typedef _BaseTimer Timer;
 
-    volatile static uint32_t _time;
-
     class Future {
         uint32_t _time;
     public:
@@ -33,6 +31,13 @@ public:
                 return *this;
         }
 
+        volatile Future& operator=(const Future& f) volatile {
+                if (this != &f) {
+                    _time = f._time;
+                }
+                return *this;
+        }
+
         bool operator<(const Future& rhs) const {
             return int32_t(_time - rhs._time) < 0;
         }
@@ -42,17 +47,27 @@ public:
         }
 
         uint32_t time() const { return _time; }
+        uint32_t time() const volatile { return _time; }
     };
+protected:
+    friend void SysTimer_ccr0_intr();
+
+    volatile static uint32_t _time;
+    volatile static Future _sleep;    // If a task is sleeping, this is its wake time
+    volatile static void* _sleeper;   // If a task is sleeping, this points to it
+public:
 
     enum {
         MIN_WAIT = 10,
-        MAX_WAIT = (1UL << 30) - 1 // In SYSTIMER_CLOCKs
+        MAX_WAIT = (1UL << 30) - 1, // In SYSTIMER_CLOCKs
+        CCR       = 0,              // CCR to use (not that CCR0 has its own vector)
+        CCR_LIMIT = 0xf800         // Timer interrupt point
     };
 
     static void init() {
         Timer::config(Timer::SOURCE_ACLK, Timer::SOURCE_DIV_8);
         Timer::start(Timer::MODE_CONT);
-        Timer::set_counter(0, Timer::ENABLE_INTR, 0xf800);
+        Timer::set_counter(CCR, Timer::ENABLE_INTR, CCR_LIMIT);
     }
 
     static void delay(uint32_t ticks) {
@@ -83,6 +98,34 @@ public:
     // True if future is due past due
     static bool due(const Future& future) {
         return remainder(future) <= 0;
+    }
+
+    // Set sleeper task.  Call with interrupts disabled.
+    static void set_sleeper_task(void* task, const Future& sleep) {
+        if (task != _sleeper) {
+            _sleeper = task;
+            _sleep = (Future&)sleep;
+            update_ccr();
+        }
+    }
+
+    // Update CCR.  Must be called with interrupts disabled.
+    static void update_ccr() {
+        if (!_sleeper) {
+            Timer::set_counter(CCR, Timer::ENABLE_INTR, CCR_LIMIT);
+            return;
+        }
+
+        const int32_t r = _sleep.time() - _time;
+        if (r >= CCR_LIMIT) {
+            Timer::set_counter(CCR, Timer::ENABLE_INTR, CCR_LIMIT);
+        } else {
+            const uint16_t r2 = r;
+            // If it's so close it's practically due, set count slightly ahead of
+            // the timer register and let the ISR run immediately.
+            // XXX Set the IFG here instead?
+            Timer::set_counter(CCR, Timer::ENABLE_INTR, max<uint16_t>(Timer::TA_R + 8, r2));
+        }
     }
 };
 
