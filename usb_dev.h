@@ -241,9 +241,14 @@ public:
     }
 
     // Get next event, or 0 if none; removes event reuturned from pending set.
-    static uint32_t pending_event() {
-       if (!_events)
-            return 0;
+    static uint32_t pending_event(bool wait = false) {
+       while (!_events) {
+           if (wait) {
+               Task::wait();
+           } else  {
+               return 0;
+           }
+       }
 
        NoInterrupt g;
 

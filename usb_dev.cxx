@@ -172,16 +172,18 @@ void USB::enable_pll() {
 
     USBPLLIR = 0; // Disable PLL IE and clear IFGs
 
+#if 0
     // Workaorund for USB8 errata - briefly enable DCO or USB PLL may not start
+    // Not needed since we run MCLK of DCO
     const uint16_t ucs4 = UCSCTL4;
     UCSCTL4 = SELA__XT2CLK | SELS__DCOCLK | SELM__XT2CLK; // Enable the DCO
-
+#endif
     // 3. Activate the PLL, using the required divider values.
     USBPLLDIVB = _plldiv;
     USBPLLCTL  = UPLLEN | UPFDEN;
 
     __delay_cycles(MCLK / 1000 * 5);  // 5ms delay
-    UCSCTL4 = ucs4;    // Restore clock sources
+//    UCSCTL4 = ucs4;    // Restore clock sources
 
     do {
         USBPLLIR = 0; // Clear PLL IFGs

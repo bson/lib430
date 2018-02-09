@@ -228,12 +228,11 @@ template <typename Delegate>
 void USBTMC<Delegate>::service() {
     uint32_t event;
 
-    while ((event = USB::pending_event()) != USB::EVENT_NONE) {
+    while ((event = USB::pending_event(true)) != USB::EVENT_NONE) {
         switch (event) {
         case USB::EVENT_RESET:
             DMSG("USBTMC: reset by host or disconnect\n");
             // Delay to avoid thrashing on reset
-            // XXX should use task sleep
             Task::sleep(TIMER_SEC(1));
             USB::start();
             continue;

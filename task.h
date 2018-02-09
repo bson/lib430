@@ -141,7 +141,7 @@ public:
     }
 
     // Short hand to sleep in ticks
-    static void sleep(int32_t ticks) { sleep(SysTimer::Future(ticks)); }
+    static void sleep(int32_t ticks) { sleep(SysTimer::future(ticks)); }
 
     // Launch task.
     static void launch(Task& t, StartFunc start, void* stack) {
