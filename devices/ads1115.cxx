@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "ads1115.h"
+#include "task.h"
 
 namespace ads1115 {
 
@@ -26,7 +27,7 @@ bool ADC<Device>::wait_conv() {
 	bool ok = true;
 	if (Device::start_read(&data_hi) && Device::read(&data_lo)) {
 		while ((data_hi & (CONF_OS >> 8)) && !SysTimer::due(deadline)) {
-			SysTimer::delay(TIMER_USEC(500));
+			Task:sleep(TIMER_USEC(500));
 			if (!Device::read(&data_hi) || !Device::read(&data_lo)) {
 				ok = false;
 				break;

@@ -14,7 +14,7 @@
 
 #include "common.h"
 #include "cpu/cpu.h"
-#include "timer.h"
+#include "task.h"
 #include "hd44780.h"
 
 namespace hd44780 {
@@ -28,13 +28,13 @@ void Disp::init(bool backlight) {
     
     Device::init();
 
-    SysTimer::delay(TIMER_MSEC(15));
+    Task:sleep(TIMER_MSEC(15));
     write_reg(IR, 0x3);
-    SysTimer::delay(TIMER_MSEC(5));
+    Task:sleep(TIMER_MSEC(5));
     write_reg(IR, 0x3);
-    SysTimer::delay(TIMER_USEC(1000));
+    Task:sleep(TIMER_USEC(1000));
     write_reg(IR, 0x2);
-    SysTimer::delay(TIMER_USEC(CMD_DELAY));
+    Task:sleep(TIMER_USEC(CMD_DELAY));
 
     command(CMD_FUNCTIONSET | MODE_4BIT | LINES_2 | DOTS_5X8);
     command(CMD_DISPLAYCONTROL | DISPLAYON | CURSOROFF | BLINKOFF);

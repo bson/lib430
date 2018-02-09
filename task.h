@@ -140,6 +140,9 @@ public:
            // XXX enter LPM
     }
 
+    // Short hand to sleep in ticks
+    static void sleep(int32_t ticks) { sleep(SysTimer::Future(ticks)); }
+
     // Launch task.
     static void launch(Task& t, StartFunc start, void* stack) {
         t._save.reg[REG_SP] = (uint16_t)stack;
