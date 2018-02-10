@@ -88,7 +88,7 @@ void USB::start() {
 
 void USB::announce() {
     NoInterruptReent g;
-    events().post(EVENT_READY);
+    _events.post(EVENT_READY);
 }
 
 void USB::suspend() {
@@ -101,7 +101,7 @@ void USB::suspend() {
     USBPWRCTL |= VBOFFIE;
     USBIE      = RSTRIE | RESRIE;
 
-    events().post(EVENT_SUSPEND);
+    _events.post(EVENT_SUSPEND);
 }
 
 void USB::resume() {

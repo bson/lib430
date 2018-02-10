@@ -3,6 +3,7 @@
 #include "ssd1963.h"
 #include "task.h"
 #include "panel/font/runes.h"
+#include "hsd04319w1_a.h"
 
 namespace rune_defs {
 #include "panel/font/runes.inc"
@@ -10,37 +11,67 @@ namespace rune_defs {
 
 namespace ssd1963 {
 
+using namespace PanelInfo;
+
 template <typename _DBPORT,
           typename _CTLPORT,
           uint8_t _CTL_CS,
           uint8_t _CTL_WR,
           uint8_t _CTL_RD,
-          uint8_t _CTL_RS,
-          int _WIDTH,
-          int _HEIGHT>
-void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGHT>
+          uint8_t _CTL_RS>
+void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
           ::init() {
-    // XXX automate this based on dimensions, refresh, and porch constants
+
+    DATA_PORT::P_DIR = 0xff;  // Output by default
+
     enum {
+        XT_IN = 10000000ULL,    // 10MHz crystal
         LCD_A = 0b00000000,
         LCD_B = 0b00100000,
-        LCD_HPS = WIDTH-1,
-        LCD_VPS = HEIGHT-1,
         LCD_G = 0b00000000,  // R,G,B order
-        PIXEL_CLOCK = 4000000ULL, // 4MHz
-        PLL_CLOCK = 113333333ULL, // PLL @ 113.33MHz
-        CLOCK_DIV = uint32_t((PIXEL_CLOCK << 20ULL) / PLL_CLOCK)
+        PIXEL_CLOCK = 1ULL * PXCLOCK_TYP,
+        PLL_M = 40ULL,
+        PLL_N = 5ULL
+    };
+
+    // Sync Timing Config Parameters
+    enum {
+        // Vertical config parameters
+        PARM_VDP = VERT_VISIBLE - 1L,
+        PARM_VT  = (VERT_FRONT_PORCH + VERT_VISIBLE + VERT_BACK_PORCH + VSYNC_WIDTH) - 1L,
+        PARM_VPW = VSYNC_WIDTH - 1L,
+        PARM_VPS = VSYNC_MOVE + VSYNC_WIDTH + VERT_BACK_PORCH,
+        PARM_FPS = VSYNC_MOVE,
+
+        // Horizontal config parameters
+        PARM_HDP = HOR_VISIBLE - 1L,
+        PARM_HT  = (HOR_FRONT_PORCH + HOR_VISIBLE + HSYNC_WIDTH + HOR_BACK_PORCH) - 1L,
+        PARM_HPW = HSYNC_WIDTH - 1L,
+        PARM_HPS = HSYNC_MOVE + HSYNC_WIDTH + HOR_BACK_PORCH,
+        PARM_LPS = HSYNC_MOVE,
+        PARM_LPSPP = HSYNC_SUBPIXEL_POS
+    };
+
+    enum {
+        VCO_FREQ = XT_IN * PLL_M,
+        ADJCLK = uint64_t(PIXEL_CLOCK) << 20ULL,
+
+        PARM_LSHIFT = uint64_t(ADJCLK * PLL_N) / VCO_FREQ - 1,
+        REFRESH_RATE = uint64_t(PIXEL_CLOCK) / (uint64_t(PARM_HT) * uint64_t(PARM_VT))
     };
 
     wcommand(CMD_EXIT_SLEEP_MODE);
-    Task::sleep(TIMER_MSEC(500));
+    Task::sleep(TIMER_MSEC(50));
 
-    // 10MHz * 34/3 = 113.33MHz
-    wcommand_barr(CMD_SET_PLL_MN, 3, (const uint8_t*)"\x31\x02\x04");
+    wcommand8(CMD_SET_PLL, 0);
+    static const uint8_t pll[] = { PLL_M - 1, PLL_N - 1, 4 };
+    wcommand_barr(CMD_SET_PLL_MN, 3, pll);
 
     wcommand8(CMD_SET_PLL, 0x01);   // Enable PLL
-    Task::sleep(TIMER_USEC(100));
+    Task::sleep(TIMER_MSEC(100));
     wcommand8(CMD_SET_PLL, 0x03);   // Enable and use PLL
+
+#define PARM16(P) ((P) >> 8) & 0xff, (P) & 0xff
 
     static const uint8_t sequence[] = {
        CMD_ENTER_NORMAL_MODE, 0,
@@ -49,15 +80,15 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGH
        CMD_SET_ADDRESS_MODE, 1, 0x00,   // T-B, L-R etc (b1=flip H, b0=flip V)
        CMD_SET_PIXEL_FORMAT, 1, 0b01100000, // 18bpp
        CMD_SET_LCD_MODE, 7,
-           LCD_A, LCD_B, LCD_HPS >> 8, LCD_HPS & 0xff, LCD_VPS >> 8, LCD_VPS & 0xff, LCD_G,
+           LCD_A, LCD_B, PARM16(PARM_HDP), PARM16(PARM_VDP), LCD_G,
        CMD_SET_HORI_PERIOD, 8,
-           LCD_HPS >> 8, LCD_HPS & 0xff, LCD_HPS >> 8, LCD_HPS & 0xff, 7, 0, 0, 0,
+           PARM16(PARM_HT), PARM16(PARM_HPS), PARM_HPW, PARM16(PARM_LPS), PARM_LPSPP,
        CMD_SET_VERT_PERIOD, 7,
-           LCD_VPS >> 8, LCD_VPS & 0xff, 0, 4, 1, 0, 0,
-       CMD_SET_POST_PROC, 4, 0x40, 0x80, 0x40,  // Contrast, Brigthness, Saturation
+           PARM16(PARM_VT), PARM16(PARM_VPS), PARM_VPW, PARM16(PARM_FPS),
        CMD_SET_LSHIFT_FREQ, 3,
-           (CLOCK_DIV >> 16) & 0xff, (CLOCK_DIV >> 8) & 0xff, CLOCK_DIV & 0xff,
+           (PARM_LSHIFT >> 16) & 0xff, PARM16(PARM_LSHIFT),
        CMD_SET_PIXEL_DATA_INTERFACE, 1, 0, // 8 bit interface (3x 6 bit)
+ //      CMD_SET_POST_PROC, 4, 0x40, 0x80, 0x40,  // Contrast, Brigthness, Saturation
        CMD_SET_DISPLAY_ON, 0
     };
 
@@ -78,13 +109,11 @@ template <typename _DBPORT,
           uint8_t _CTL_CS,
           uint8_t _CTL_WR,
           uint8_t _CTL_RD,
-          uint8_t _CTL_RS,
-          int _WIDTH,
-          int _HEIGHT>
-void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGHT>
+          uint8_t _CTL_RS>
+void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
           ::clear() {
     set_rgb(0, 0, 0);
-    fill(0, 0, WIDTH, HEIGHT);
+    fill(0, 0, HOR_VISIBLE, VERT_VISIBLE);
 }
 
 template <typename _DBPORT,
@@ -92,16 +121,14 @@ template <typename _DBPORT,
           uint8_t _CTL_CS,
           uint8_t _CTL_WR,
           uint8_t _CTL_RD,
-          uint8_t _CTL_RS,
-          int _WIDTH,
-          int _HEIGHT>
-void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGHT>
+          uint8_t _CTL_RS>
+void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
           ::fill(uint16_t col, uint16_t row, uint16_t w, uint16_t h) {
     set_window(col, row, w, h);
 
     command_start(CMD_WRITE_MEMORY_START);
-    for (uint16_t r = 0; r < w; ++r)
-        for (uint16_t c = 0; c < h; ++c) {
+    for (uint16_t c = 0; c < w; ++c)
+        for (uint16_t r = 0; r < h; ++r) {
             data(_r);
             data(_g);
             data(_b);
@@ -114,24 +141,18 @@ template <typename _DBPORT,
           uint8_t _CTL_CS,
           uint8_t _CTL_WR,
           uint8_t _CTL_RD,
-          uint8_t _CTL_RS,
-          int _WIDTH,
-          int _HEIGHT>
-void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGHT>
+          uint8_t _CTL_RS>
+void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
           ::set_window(uint16_t col, uint16_t row, uint16_t w, uint16_t h) {
 
     command_start(CMD_SET_PAGE_ADDRESS);
-    data(row >> 8);
-    data(row);
-    data((row + h - 1) >> 8);
+    data16(row);
     data(row + h - 1);
     command_end();
 
     command_start(CMD_SET_COLUMN_ADDRESS);
-    data(col >> 8);
-    data(col);
-    data((col + w - 1) >> 8);
-    data(col + w - 1);
+    data16(col);
+    data16(col + w - 1);
     command_end();
 }
 
@@ -140,10 +161,8 @@ template <typename _DBPORT,
           uint8_t _CTL_CS,
           uint8_t _CTL_WR,
           uint8_t _CTL_RD,
-          uint8_t _CTL_RS,
-          int _WIDTH,
-          int _HEIGHT>
-void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS, _WIDTH, _HEIGHT>
+          uint8_t _CTL_RS>
+void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
           ::render(uint16_t x, uint16_t y, Rune rune, uint16_t w, uint16_t h)  {
     set_window(x, y, w, h);
 

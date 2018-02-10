@@ -18,9 +18,7 @@ template <typename _DBPORT,
           uint8_t _CTL_CS,
           uint8_t _CTL_WR,
           uint8_t _CTL_RD,
-          uint8_t _CTL_RS,
-          int _WIDTH  = 480,
-          int _HEIGHT = 272>
+          uint8_t _CTL_RS>
 class Panel {
     static uint8_t _r;
     static uint8_t _g;
@@ -31,8 +29,6 @@ public:
     typedef _CTLPORT CONTROL_PORT;
 
     enum {
-        WIDTH  = _WIDTH,
-        HEIGHT = _HEIGHT,
         MASK_CS = _CTL_CS,
         MASK_WR = _CTL_WR,
         MASK_RD = _CTL_RD,
@@ -128,24 +124,47 @@ public:
         _r = r; _g = g; _b = b;
     }
     static void render(uint16_t x, uint16_t y, Rune rune, uint16_t w, uint16_t h);
+
+    // Set PWM brightness, only usable for modules that use the PWM
+    static void set_brightness(uint8_t b) {
+        command_start(CMD_SET_PWM_CONF);
+        data(0x0e);  // 300Hz @ 120MHz PLL
+        data(b);
+        data(0x01);  // Enable
+        data(0);
+        data(0);
+        data(0);
+        command_end();
+    }
+
 private:
     // Set window
     static void set_window(uint16_t col, uint16_t row, uint16_t w, uint16_t h);
 
     // A bunch of inlined primitives
     static void command_start(uint8_t cmd) {
-        CONTROL_PORT::P_OUT |= MASK_RS | MASK_RD | MASK_WR;
-        CONTROL_PORT::P_OUT &= ~MASK_WR;
-        DATA_PORT::P_DIR = 0xff;  // Out
-        DATA_PORT::P_OUT = cmd;
-        CONTROL_PORT::P_OUT |= MASK_WR;
+        CONTROL_PORT::P_OUT |= MASK_RS | MASK_RD | MASK_WR | MASK_CS;
+        CONTROL_PORT::P_OUT &= ~(MASK_WR | MASK_RS);  // WR active; RS = 0 = command
+        DATA_PORT::P_OUT = cmd;           // Data on bus
+        __delay_cycles(MCLK/1000000L);
+        CONTROL_PORT::P_OUT &= ~MASK_CS;  // CS active  - data hold begins (4ns)
+        CONTROL_PORT::P_OUT |= MASK_CS;   // CS inactive
+        CONTROL_PORT::P_OUT |= MASK_WR; // WR inactive - data is latched on this edge
+        CONTROL_PORT::P_OUT |= MASK_RS; // Restore RS
     }
-    static void command_end() { ; }
+    static void command_end() {
+        CONTROL_PORT::P_OUT |= MASK_CS | MASK_RD | MASK_WR | MASK_RS;  // CS inactive
+    }
 
+    // In a series of data writes CS is kept low across all of them, then
+    // released by command_end().
     static void data(uint8_t d) {
-        CONTROL_PORT::P_OUT &= ~(MASK_WR | MASK_RS);
-        DATA_PORT::P_OUT = d;
-        CONTROL_PORT::P_OUT |= MASK_WR;
+        CONTROL_PORT::P_OUT |= MASK_RS | MASK_WR | MASK_RD;   // RS = 1 = data
+        CONTROL_PORT::P_OUT &= ~MASK_CS;   // CS active
+        DATA_PORT::P_OUT = d;             // Data on bus
+        __delay_cycles(MCLK/1000000L);
+        CONTROL_PORT::P_OUT &= ~MASK_WR;  // WR active; RS = 1 = data
+        CONTROL_PORT::P_OUT |= MASK_WR;   // WR inactive - data is latched on this edge
     }
     static void data16(uint16_t d) {
         data(d >> 8);
@@ -165,6 +184,7 @@ private:
         command_start(cmd);
         while (nbytes--)
             data(*d++);
+
         command_end();
     }
 
