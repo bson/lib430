@@ -7,16 +7,10 @@
 #include "cpu/cpu.h"
 
 
-// Simple task abstraction.  Its main purpose is to support a simple
-// model where there is a single main or "idle" context, and additional
-// service tasks for e.g. USB or I2C Device support to do processing too
-// complex for an ISR.  In this case the ISR notes work to be done, e.g.
-// by registering an event or setting a flag, then switches to its service
-// task.  The service task performs its processing, then yields to the
-// idle task.
+// Basic task model.
 
 // Most, well actually all, of the code here is inlined to allow the compiler
-// to make size-vs-performance tradeoffs (inlining).
+// to make size-vs-performance tradeoffs.
 
 extern "C" {
 uint16_t *task_reg_save _weak_;
