@@ -79,7 +79,7 @@ public:
     // 16 bit exception code.
     class Exception {
         Task::State _state;    // State to restore to on exception
-        uint16_t _code;
+        uint16_t _code;        // Exception reason, set when posted,
     public:
         // Predefined codes.  Please conform to these.
         enum {
@@ -90,25 +90,26 @@ public:
         // Catch exceptions.  Returns true on setup, false on a catch.
         // Note that there is no change to the task state.  An exception
         // handler doesn't get used up.  A Task can only have one handler
-        // active at any time.
+        // active at any time.  The SR register is reset on reception to
+        // the value when this function is called.
         bool receive() {
             NoInterruptReent g;
             Task::_task->_exception = this;
             return (!Task::prepare_to_suspend(_state.reg));
         }
 
-        // Post an exception to current task
+        // Post an exception to current task.
         static void post(uint16_t code) {
             NoInterruptReent g;
             if (!Task::_task) {
-                // No task bootstrapped
+                // Not bootstrapped yet
                 return;
             }
 
             if (Task::_task->_exception) {
                 Exception* e = Task::_task->_exception;
                 e->_code = code;
-                resume(e->_state.reg);
+                resume_reti(e->_state.reg);
             }
         }
 
@@ -125,20 +126,22 @@ public:
     // Deactivate and wait to become active.  Takes an optional timer param to set a
     // wait bound.
     static void wait0(const SysTimer::Future* f = NULL) {
-        NoInterruptReent g;
+        {
+            NoInterruptReent g;
 
-        if (f) {
-            _task->_state = STATE_SLEEP;
-            _task->_sleep = *f;
-            Task* s = next_sleeper();
-            SysTimer::set_sleeper_task(s, s->_sleep);
-        } else {
-            _task->_state = STATE_WAIT;
+            if (f) {
+                _task->_state = STATE_SLEEP;
+                _task->_sleep = *f;
+                Task* s = next_sleeper();
+                SysTimer::set_sleeper_task(s, s->_sleep);
+            } else {
+                _task->_state = STATE_WAIT;
+            }
+
+            Task *t = pick();  // Pick another task
+            if (t)
+                switch_task(*t);
         }
-
-        Task *t = pick();  // Pick another task
-        if (t)
-            switch_task(*t);
 
         while (_task->_state != STATE_ACTIVE)
             LPM3;
@@ -149,26 +152,6 @@ public:
     static void wait(const SysTimer::Future& f) { wait0(&f); }
     static void wait(uint32_t ticks) { wait(SysTimer::future(ticks)); }
 
-#if 0
-    // Task sleep.
-    static void sleep(const SysTimer::Future& f) {
-        {
-            NoInterruptReent g;
-            _task->_state = STATE_SLEEP;
-            _task->_sleep = f;
-            Task* s = next_sleeper();
-            SysTimer::set_sleeper_task(s, s->_sleep);
-            Task *t = pick();  // Pick another task
-            if (t)
-                switch_task(*t);
-        }
-        while (_task->_state != STATE_ACTIVE)
-            LPM3;
-    }
-
-    // Short hand to sleep in ticks
-    static void sleep(int32_t ticks) { sleep(SysTimer::future(ticks)); }
-#endif
     // Activate a task: make it active and switch to it if its priority is higher than
     // the current task.  Must be called with interrupts disabled.
     // The task can be either in a wait or sleep state.
@@ -293,6 +276,35 @@ protected:
         __asm("  mov.w  @r12+, r14");
         __asm("  mov.w  @r12+, r15");
         __asm("  mov.w  &task_leap, pc");   // Weeee....
+    }
+
+    // Like resume(), except returns via RETI
+#pragma FUNC_NEVER_RETURNS
+    static void resume_reti(uint16_t *save_reg) {
+        task_retval = 1;
+        task_reg_save = save_reg+1;   // SP save slot
+
+        __asm("  mov.w  &task_reg_save, r12");
+        __asm("  mov.w  @r12+, sp");
+        __asm("  mov.w  -4(r12), &task_leap"); // Set up saved PC
+        __asm("  nop");                       // Required for SR change
+        __asm("  mov.w  @r12+, sr");
+        __asm("  nop");                       // Required for SR change
+        __asm("  mov.w  @r12+, r4");
+        __asm("  mov.w  @r12+, r5");
+        __asm("  mov.w  @r12+, r6");
+        __asm("  mov.w  @r12+, r7");
+        __asm("  mov.w  @r12+, r8");
+        __asm("  mov.w  @r12+, r9");
+        __asm("  mov.w  @r12+, r10");
+        __asm("  mov.w  @r12+, r11");
+        __asm("  mov.w  @r12+, &task_r12");
+        __asm("  mov.w  @r12+, r13");
+        __asm("  mov.w  @r12+, r14");
+        __asm("  mov.w  @r12+, r15");
+        __asm("  push.w &task_leap");
+        __asm("  push.w sr");
+        __asm("  reti");
     }
 
     // Unguarded task switch.

@@ -43,9 +43,7 @@ void USB::reset() {
     USBIE      = 0;
     USBPLLIR   = 0;      // Disable IE, clear IFG
     USBFUNADR  = 0;
-
-    // Note: we leave the PLL running if it's on to avoid spurious bus errors in the
-    // USB task.
+    USBCTL     = FEN;
 }
 
 void USB::start() {
@@ -56,15 +54,17 @@ void USB::start() {
 
     UnlockConf u;
 
-    USBCTL = 0;   // Turn off transceiver
+    USBCTL = FEN;
 
     // Errata: USB9
     USBPWRCTL  = 0;
     __delay_cycles(MCLK / 1000 * 5);
 
+    USBCNF    &= ~(USB_EN | PUR_EN);
     USBPLLIR  &= ~(USBOOLIE | USBLOSIE | USBOORIE);
     USBPLLCTL &= ~UPLLEN; // Turn off PLL
-    USBCNF    &= ~(USB_EN | PUR_EN);
+
+    // Enable power (self powered)
     USBPWRCTL  = VUSBEN | SLDOAON;
 
     // 5ms delay
@@ -113,7 +113,7 @@ void USB::resume() {
     USBPWRCTL |= VBOFFIE;
     USBIE      = RSTRIE | SUSRIE | SETUPIE | STPOWIE;
     USBPLLIR  |= USBOOLIE | USBLOSIE | USBOORIE;
-    USBCTL    |= FEN;     // Enable USB transceiver
+    USBCTL    |= FEN | FRSTE;     // Enable USB transceiver
 }
 
 void USB::ready_ack() {
@@ -156,7 +156,7 @@ void USB::ready_ack() {
     USBIE    = RSTRIE | SUSRIE | SETUPIE /*| STPOWIE */;
     USBPLLIR = USBOOLIE | USBLOSIE | USBOORIE;  // Also clears pending PLL IFGs
 
-    USBCTL  |= FEN;    // Enable USB transceiver
+    USBCTL  |= FEN | FRSTE;    // Enable USB transceiver
 
     USBCNF  |= PUR_EN;   // Pull-up on DP to let host know we're here
 
