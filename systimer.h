@@ -109,6 +109,9 @@ public:
         }
     }
 
+    // Get current sleeper task.
+    static void* sleeper() { return (void*)_sleeper; }
+
     // Update CCR.  Must be called with interrupts disabled.
     static void update_ccr() {
         if (!_sleeper) {

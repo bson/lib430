@@ -9,7 +9,7 @@ Idle::flags_t Idle::_flags;
 
 void Idle::loop(const SysTimer::Future& f) {
     if (!_activity) {
-        Task::sleep(f);
+        Task::wait(f);
         return;
     }
 
@@ -17,14 +17,14 @@ void Idle::loop(const SysTimer::Future& f) {
     deadline.adjust(_deadline_margin);
 
     while (!SysTimer::due(deadline)) {
-        Task::sleep(min(f, _next_due));
+        Task::wait(min(f, _next_due));
 
         if (SysTimer::due(_next_due))
             work();
     }
 
     if (_deadline_margin)
-        Task::sleep(deadline);
+        Task::wait(deadline);
 }
 
 void Idle::add(Activity* activity) {

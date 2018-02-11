@@ -119,7 +119,7 @@ void USB::resume() {
 void USB::ready_ack() {
     enable_pll();
 
-    Task::sleep(TIMER_USEC(100));
+    Task::wait(TIMER_USEC(100));
 
     NoInterruptReent g;
 

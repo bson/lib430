@@ -122,30 +122,34 @@ public:
     Task() { }
     ~Task() { }
 
-    // Yield to specific task, ignoring priority.  This permits a task to hand over
-    // temporarily to a lower priority task.  The lower priority one will run until
-    // it yields, activates a higher priority task, or enters wait.
-    static void yield(Task& t) {
+    // Deactivate and wait to become active.  Takes an optional timer param to set a
+    // wait bound.
+    static void wait0(const SysTimer::Future* f = NULL) {
         NoInterruptReent g;
-        if (t._state != STATE_SLEEP)  {
-            t._state = STATE_ACTIVE;
-            switch_task(t);
-        }
-    }
 
-    // Deactivate and wait to become active
-    static void wait() {
-        {
-            NoInterruptReent g;
+        if (f) {
+            _task->_state = STATE_SLEEP;
+            _task->_sleep = *f;
+            Task* s = next_sleeper();
+            SysTimer::set_sleeper_task(s, s->_sleep);
+        } else {
             _task->_state = STATE_WAIT;
-            Task *t = pick();  // Pick another task
-            if (t)
-                switch_task(*t);
         }
+
+        Task *t = pick();  // Pick another task
+        if (t)
+            switch_task(*t);
+
         while (_task->_state != STATE_ACTIVE)
             LPM3;
     }
 
+    // Some shorthand forms
+    static void wait() { wait0(); }
+    static void wait(const SysTimer::Future& f) { wait0(&f); }
+    static void wait(uint32_t ticks) { wait(SysTimer::future(ticks)); }
+
+#if 0
     // Task sleep.
     static void sleep(const SysTimer::Future& f) {
         {
@@ -164,17 +168,20 @@ public:
 
     // Short hand to sleep in ticks
     static void sleep(int32_t ticks) { sleep(SysTimer::future(ticks)); }
-
+#endif
     // Activate a task: make it active and switch to it if its priority is higher than
     // the current task.  Must be called with interrupts disabled.
     // The task can be either in a wait or sleep state.
     static void wake(Task& t) {
         switch (t._state) {
         case STATE_SLEEP: {
-            t._state = STATE_ACTIVE;
-            Task* s = next_sleeper();
-            if (s) {
-                SysTimer::set_sleeper_task(s, s->_sleep);
+            if (SysTimer::sleeper() == &t) {
+                // Waking the active sleeper... set up the next one.
+                t._state = STATE_ACTIVE;
+                Task* s = next_sleeper();
+                if (s) {
+                    SysTimer::set_sleeper_task(s, s->_sleep);
+                }
             }
         }
         // FALLTHRU

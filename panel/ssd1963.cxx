@@ -61,7 +61,7 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
     };
 
     wcommand(CMD_EXIT_SLEEP_MODE);
-    Task::sleep(TIMER_MSEC(5));
+    Task::wait(TIMER_MSEC(5));
 
     // Disable during init to avoid flickering
     wcommand(CMD_SET_DISPLAY_OFF);
@@ -71,7 +71,7 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
     wcommand_barr(CMD_SET_PLL_MN, 3, pll);
 
     wcommand8(CMD_SET_PLL, 0x01);   // Enable PLL
-    Task::sleep(TIMER_USEC(100));
+    Task::wait(TIMER_USEC(100));
     wcommand8(CMD_SET_PLL, 0x03);
 
     wcommand(CMD_SOFT_RESET);
