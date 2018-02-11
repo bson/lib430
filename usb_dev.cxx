@@ -28,8 +28,6 @@ uint16_t USB::_brk;
 uint8_t USB::_neps;     // Number of endpoint pairs
 uint8_t USB::_addr;     // Bus address 1-127
 
-Task* USB::_task;
-
 extern void xprintf(const char *fmt, ...);
 
 void USB::reset() {
@@ -66,13 +64,13 @@ void USB::start() {
 
     USBPLLIR  &= ~(USBOOLIE | USBLOSIE | USBOORIE);
     USBPLLCTL &= ~UPLLEN; // Turn off PLL
+    USBCNF    &= ~(USB_EN | PUR_EN);
     USBPWRCTL  = VUSBEN | SLDOAON;
 
     // 5ms delay
     __delay_cycles(MCLK / 1000 * 5);
 
     USBFUNADR  = 0;
-    USBCNF    &= ~(USB_EN | PUR_EN);
     USBPHYCTL  = PUSEL;
     USBPLLIR   = 0;      // Disable IE, clear IFG
     USBIE      = 0;      // No other interrupts
@@ -136,11 +134,11 @@ void USB::ready_ack() {
     USBIFG     = 0;       // Clear any pending interrupts
 
     // Enable EP0 IN
-    USBIEPCNF_0  = UBME | USBIIE | STALL;
+    USBIEPCNF_0  = UBME | USBIIE;
     USBIEPCNT_0  = NAK;
 
     // Enable EP0 OUT
-    USBOEPCNF_0  = UBME | USBIIE | STALL;
+    USBOEPCNF_0  = UBME | USBIIE;
     USBOEPCNT_0  = NAK;
 
     USBIEPIE     = BIT0;   // EP0 input transaction interrupts
@@ -587,8 +585,8 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
             break;
         }
     }
-
     USB::events().wake();
+    LPM3_EXIT;
 }
 
 #endif // __MSP430_HAS_USB__

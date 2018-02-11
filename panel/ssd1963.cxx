@@ -61,15 +61,21 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
     };
 
     wcommand(CMD_EXIT_SLEEP_MODE);
-    Task::sleep(TIMER_MSEC(50));
+    Task::sleep(TIMER_MSEC(5));
+
+    // Disable during init to avoid flickering
+    wcommand(CMD_SET_DISPLAY_OFF);
 
     wcommand8(CMD_SET_PLL, 0);
     static const uint8_t pll[] = { PLL_M - 1, PLL_N - 1, 4 };
     wcommand_barr(CMD_SET_PLL_MN, 3, pll);
 
     wcommand8(CMD_SET_PLL, 0x01);   // Enable PLL
-    Task::sleep(TIMER_MSEC(100));
-    wcommand8(CMD_SET_PLL, 0x03);   // Enable and use PLL
+    Task::sleep(TIMER_USEC(100));
+    wcommand8(CMD_SET_PLL, 0x03);
+
+    wcommand(CMD_SOFT_RESET);
+    Task::sleep(TIMER_MSEC(5));
 
 #define PARM16(P) ((P) >> 8) & 0xff, (P) & 0xff
 
@@ -77,8 +83,8 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
        CMD_ENTER_NORMAL_MODE, 0,
        CMD_EXIT_INVERT_MODE, 0,
        CMD_SET_TEAR_OFF, 0,
-       CMD_SET_ADDRESS_MODE, 1, 0x00,   // T-B, L-R etc (b1=flip H, b0=flip V)
-       CMD_SET_PIXEL_FORMAT, 1, 0b01100000, // 18bpp
+       CMD_SET_ADDRESS_MODE, 1, 0x01,   // T-B, L-R etc (b1=flip H, b0=flip V)
+       CMD_SET_PIXEL_FORMAT, 1, 0b01110000, // 24bpp
        CMD_SET_LCD_MODE, 7,
            LCD_A, LCD_B, PARM16(PARM_HDP), PARM16(PARM_VDP), LCD_G,
        CMD_SET_HORI_PERIOD, 8,
@@ -87,8 +93,8 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
            PARM16(PARM_VT), PARM16(PARM_VPS), PARM_VPW, PARM16(PARM_FPS),
        CMD_SET_LSHIFT_FREQ, 3,
            (PARM_LSHIFT >> 16) & 0xff, PARM16(PARM_LSHIFT),
-       CMD_SET_PIXEL_DATA_INTERFACE, 1, 0, // 8 bit interface (3x 6 bit)
- //      CMD_SET_POST_PROC, 4, 0x40, 0x80, 0x40,  // Contrast, Brigthness, Saturation
+       CMD_SET_PIXEL_DATA_INTERFACE, 1, 0, // 8 bit interface (3x 8 bit per pixel)
+       CMD_SET_POST_PROC, 4, 0x40, 0x80, 0x40,1,  // Contrast, Brigthness, Saturation
        CMD_SET_DISPLAY_ON, 0
     };
 
@@ -127,13 +133,16 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
     set_window(col, row, w, h);
 
     command_start(CMD_WRITE_MEMORY_START);
-    for (uint16_t c = 0; c < w; ++c)
+
+    for (uint16_t c = 0; c < w; ++c) {
         for (uint16_t r = 0; r < h; ++r) {
             data(_r);
             data(_g);
             data(_b);
         }
+    }
     command_end();
+    wcommand(CMD_NOP);
 }
 
 template <typename _DBPORT,
@@ -145,14 +154,14 @@ template <typename _DBPORT,
 void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
           ::set_window(uint16_t col, uint16_t row, uint16_t w, uint16_t h) {
 
-    command_start(CMD_SET_PAGE_ADDRESS);
-    data16(row);
-    data(row + h - 1);
-    command_end();
-
     command_start(CMD_SET_COLUMN_ADDRESS);
     data16(col);
     data16(col + w - 1);
+    command_end();
+
+    command_start(CMD_SET_PAGE_ADDRESS);
+    data16(row);
+    data16(row + h - 1);
     command_end();
 }
 
@@ -195,6 +204,7 @@ void Panel<_DBPORT, _CTLPORT, _CTL_CS, _CTL_WR, _CTL_RD, _CTL_RS>
         }
     }
     command_end();
+    wcommand(CMD_NOP);
 }
 
 };

@@ -228,56 +228,56 @@ template <typename Delegate>
 void USBTMC<Delegate>::service() {
     uint32_t event;
 
-    while ((event = USB::events().get_event(true)) != USB::EVENT_NONE) {
+    if ((event = USB::events().get_event(true)) != USB::EVENT_NONE) {
         switch (event) {
         case USB::EVENT_RESET:
             DMSG("USBTMC: reset by host or disconnect\n");
             // Delay to avoid thrashing on reset
             Task::sleep(TIMER_SEC(1));
             USB::start();
-            continue;
+            break;
 
         case USB::EVENT_PLL_OOL:
             DMSG("USBTMC: PLL sync lost\n");
-            continue;
+            break;
 
         case USB::EVENT_INACTIVE:
             DMSG("USBTMC: inactive (started)\n");
             Delegate::disconnect();
-            continue;
+            break;
 
         case USB::EVENT_READY:
             DMSG("USBTMC: ready\n");
             add_eps();
-            continue;
+            break;
 
         case USB::EVENT_ACTIVE:
             DMSG("USBTMC: active\n");
             Delegate::active();
-            continue;
+            break;
 
         case USB::EVENT_SETUP:
             DMSG("USBTMC: setup\n");
             dumpsetup();
-            continue;
+            break;
 
         case USB::EVENT_STALL:
             DMSG("USBTMC: stalled\n");
-            continue;
+            break;
 
         case USB::EVENT_SUSPEND:
             DMSG("USBTMC: suspended\n");
-            continue;
+            break;
 
         case USB::EVENT_RESUME:
             DMSG("USBTMC: resuming\n");
             USB::resume();
             DMSG("USBTMC: resumed\n");
-            continue;
+            break;
 
         case USB::EVENT_SETADDR:
             DMSG("USBTMC: set addr %d\n", USB::addr());
-            continue;
+            break;
 
         case USB::EVENT_SETUPHK: {
             DMSG("USBTMC: application control/setup hook\n");
@@ -287,21 +287,21 @@ void USBTMC<Delegate>::service() {
             if (((setup->type >> 5) & 3) == 1) {
                 control_req(setup);
             }
-            continue;
+            break;
         }
         case USB::EVENT_EP1_OUT:
             DMSG("USBTMC: EP1 OUT\n");
             USB::read(1, _bulk_out_req, _bulk_out_len);
             bulk_dev_req();
-            continue;
+            break;
 
         case USB::EVENT_EP1_IN:
             DMSG("USBTMC: EP1 IN\n");
-            continue;
+            break;
 
         default:
             DMSG("USBTMC: other event: %x\n", event);
-            continue;
+            break;
         }
     }
 }

@@ -25,8 +25,10 @@ void _intr_(SysTimer::Timer::VECTOR0)  SysTimer_ccr0_intr() {
     }
 
     // This can cause a task switch so needs to happen last
-    if (task_wake)
+    if (task_wake) {
         Task::wake(*task_wake);
+        LPM3_EXIT;
+    }
 }
 
 #endif // _MAIN_

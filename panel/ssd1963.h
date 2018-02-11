@@ -137,6 +137,13 @@ public:
         command_end();
     }
 
+    static void adjust_cbs(uint8_t cont  = 0x40,
+                           uint8_t brite = 0x80,
+                           uint8_t sat   = 0x40) {
+        uint8_t v[3] = { cont, brite, sat, 1 };
+        wcommand_barr(CMD_SET_POST_PROC, 4, v);
+    }
+
 private:
     // Set window
     static void set_window(uint16_t col, uint16_t row, uint16_t w, uint16_t h);
@@ -144,11 +151,9 @@ private:
     // A bunch of inlined primitives
     static void command_start(uint8_t cmd) {
         CONTROL_PORT::P_OUT |= MASK_RS | MASK_RD | MASK_WR | MASK_CS;
-        CONTROL_PORT::P_OUT &= ~(MASK_WR | MASK_RS);  // WR active; RS = 0 = command
-        DATA_PORT::P_OUT = cmd;           // Data on bus
-        __delay_cycles(MCLK/1000000L);
-        CONTROL_PORT::P_OUT &= ~MASK_CS;  // CS active  - data hold begins (4ns)
-        CONTROL_PORT::P_OUT |= MASK_CS;   // CS inactive
+        CONTROL_PORT::P_OUT &= ~(MASK_CS | MASK_RS);  // CS active across command
+        DATA_PORT::P_OUT = cmd;     // Data on bus
+        CONTROL_PORT::P_OUT &= ~MASK_WR;  // WR active; RS = 0 = command
         CONTROL_PORT::P_OUT |= MASK_WR; // WR inactive - data is latched on this edge
         CONTROL_PORT::P_OUT |= MASK_RS; // Restore RS
     }
@@ -160,9 +165,7 @@ private:
     // released by command_end().
     static void data(uint8_t d) {
         CONTROL_PORT::P_OUT |= MASK_RS | MASK_WR | MASK_RD;   // RS = 1 = data
-        CONTROL_PORT::P_OUT &= ~MASK_CS;   // CS active
         DATA_PORT::P_OUT = d;             // Data on bus
-        __delay_cycles(MCLK/1000000L);
         CONTROL_PORT::P_OUT &= ~MASK_WR;  // WR active; RS = 1 = data
         CONTROL_PORT::P_OUT |= MASK_WR;   // WR inactive - data is latched on this edge
     }
@@ -190,7 +193,7 @@ private:
 
     static uint8_t rdata() {
         DATA_PORT::P_DIR = 0x00;  // Input
-        CONTROL_PORT::P_OUT &= ~MASK_RS;
+        CONTROL_PORT::P_OUT |= MASK_RS;  // Data
         CONTROL_PORT::P_OUT &= ~MASK_RD;
         const uint8_t tmp = DATA_PORT::P_IN;
         CONTROL_PORT::P_OUT |= MASK_RD;

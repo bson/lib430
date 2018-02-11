@@ -15,16 +15,16 @@
 // task.  The service task performs its processing, then yields to the
 // idle task.
 
-// But it wouldn't be overly complicated to add a scheduler, mutexes, and
-// condition variables for more elaborate priority-based scheduling.
+// Most, well actually all, of the code here is inlined to allow the compiler
+// to make size-vs-performance tradeoffs (inlining).
 
 extern "C" {
-uint16_t *task_reg_save _used_;
-uint16_t task_leap _used_;
-volatile uint16_t task_retval _used_;
-uint16_t task_temp _used_;
-uint16_t task_r12 _used_;
-uint16_t task_start _used_;
+uint16_t *task_reg_save _weak_;
+uint16_t task_leap _weak_;
+volatile uint16_t task_retval _weak_;
+uint16_t task_temp _weak_;
+uint16_t task_r12 _weak_;
+uint16_t task_start _weak_;
 }
 
 class Task {
@@ -75,6 +75,49 @@ public:
         PRIO_HIGH   = 0xc0
     };
 
+    // Exception.  This is both the catch state (tink longjmp) and a
+    // 16 bit exception code.
+    class Exception {
+        Task::State _state;    // State to restore to on exception
+        uint16_t _code;
+    public:
+        // Predefined codes.  Please conform to these.
+        enum {
+            CODE_NONE = 0,
+            CODE_BERR = 1    // Bus error
+        };
+
+        // Catch exceptions.  Returns true on setup, false on a catch.
+        // Note that there is no change to the task state.  An exception
+        // handler doesn't get used up.  A Task can only have one handler
+        // active at any time.
+        bool receive() {
+            NoInterruptReent g;
+            Task::_task->_exception = this;
+            return (!Task::prepare_to_suspend(_state.reg));
+        }
+
+        // Post an exception to current task
+        static void post(uint16_t code) {
+            NoInterruptReent g;
+            if (!Task::_task) {
+                // No task bootstrapped
+                return;
+            }
+
+            if (Task::_task->_exception) {
+                Exception* e = Task::_task->_exception;
+                e->_code = code;
+                resume(e->_state.reg);
+            }
+        }
+
+        // Get code
+        uint16_t code() const { return _code; }
+    };
+
+    Exception* _exception;    // Task exception handler and code, if any
+
 public:
     Task() { }
     ~Task() { }
@@ -111,8 +154,7 @@ public:
                 switch_task(*t);
         }
         while (_task->_state != STATE_ACTIVE)
-            ;
-            // XXX enter LPM
+            LPM3;
     }
 
     // Wake sleeping task. Must be called with interrupts disabled. Callable from an ISR.
@@ -143,8 +185,7 @@ public:
                 switch_task(*t);
         }
         while (_task->_state != STATE_ACTIVE)
-            ;
-           // XXX enter LPM
+            LPM3;
     }
 
     // Short hand to sleep in ticks
@@ -156,6 +197,7 @@ public:
         t._save.reg[REG_PC] = (uint16_t)task_wrapper;
         t._save.reg[REG_SR] = __get_SR_register();
         t._state            = STATE_ACTIVE;
+        t._exception        = NULL;
 
         NoInterrupt g;
         task_start = (uint16_t)start;
@@ -172,6 +214,7 @@ public:
         _task = &_main;
         _main._next = NULL;
         _main._prio = PRIO_LOW;  // Should be changed if desired
+        _main._exception = NULL; // No exception context
     }
 
     // Set task priority
@@ -180,14 +223,15 @@ public:
     // Return self
     static Task* self() { return _task; }
 
-private:
+protected:
+    friend class Exception;
 
     // Prepare to suspend current task as per _task.  This returns 0; non-zero when
     // resumed.  All CPU register state change after this call is "lost".  Interrupts
     // must be disabled.
-    static uint16_t prepare_to_suspend() {
+    static uint16_t prepare_to_suspend(uint16_t* save_reg) {
         task_retval = 0;
-        task_reg_save = _task->_save.reg + 15;  // R15 save slot plus one
+        task_reg_save = save_reg + 15;  // R15 save slot plus one
 
         // MSP430 can't have autoinc/autodec in dst operand, so use SP and push.
 
@@ -221,9 +265,9 @@ private:
 
     // Resume current task (as per _task).  Never returns.  Interrupts must be disabled.
 #pragma FUNC_NEVER_RETURNS
-    static void resume() {
+    static void resume(uint16_t *save_reg) {
         task_retval = 1;
-        task_reg_save = _task->_save.reg+1;   // SP save slot
+        task_reg_save = save_reg+1;   // SP save slot
 
         __asm("  mov.w  &task_reg_save, r12");
         __asm("  mov.w  @r12+, sp");
@@ -259,9 +303,9 @@ private:
         // _task can be NULL before we're bootstrapped, yet we may enter an interrupt
         // handler during init.  Just ignore.  Also don't switch to the task already on CPU.
         if (_task && &t != _task) {
-            if (!prepare_to_suspend()) {
+            if (!prepare_to_suspend(_task->_save.reg)) {
                 _task = &t;
-                resume();
+                resume(_task->_save.reg);
             }
         }
     }
@@ -302,7 +346,8 @@ private:
         const uint16_t start = task_start;
         enable_interrupt();
         ((StartFunc)start)();
-        for (;;);
+        for (;;)
+            LPM3;
     }
 
 private:

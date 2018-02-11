@@ -158,7 +158,7 @@ public:
         EVENT_NONE     = 0,
 
         EVENT_RESET    = 1,     // Got reset
-        EVENT_READY    = 4,     // Ready; waiting for SETUP (notification)
+        EVENT_INACTIVE = 2,     // Disconnected, waiting for physical connection
         EVENT_ACTIVE   = 8,     // Configured and ready to work
         EVENT_SETUP    = 0x10,  // Setup processed (notification)
         EVENT_SETUPHK  = 0x20,  // Unhandled setup in buffer (HK = hook)
@@ -167,7 +167,7 @@ public:
         EVENT_PLL_OOL  = 0x100, // PLL out of lock (notification)
         EVENT_PLL_SOR  = 0x200, // PLL signal or range error (notification)
         EVENT_EP0_OUT  = 0x400, // Received data on EP0 (control data)
-        EVENT_INACTIVE = 0x800, // Disconnected, waiting for physical connection
+        EVENT_READY    = 0x800, // Ready; waiting for SETUP (notification)
         EVENT_SUSPEND  = 0x1000, // Suspended
         EVENT_RESUME   = 0x2000, // Resumed
 
@@ -213,8 +213,6 @@ private:
     static uint8_t _neps;     // Number of endpoint pairs
     static uint8_t _addr;     // Bus address 0-127
 
-    static Task* _task;       // Service task, if any
-
 public:
     USB() { }
 
@@ -237,7 +235,6 @@ public:
         _brk = 0;
         _neps = 0;
         _state = STATE_INACTIVE;
-        _task = NULL;
     }
 
 
@@ -290,10 +287,6 @@ public:
     // State inquiries
     static State state() { return _state; }
     static uint8_t addr() { return _addr; }
-
-    // Set and get task
-    static void set_task(Task* t) { _task = t; }
-    static Task* get_task() { return _task; }
 
 protected:
     friend void usb_intr();
