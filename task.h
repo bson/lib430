@@ -133,17 +133,6 @@ public:
         }
     }
 
-    // Activate a task: make it active and switch to it if its priority is higher than
-    // the current task.  Must be called with interrupts disabled.
-    static void activate(Task& t) {
-        if (t._state == STATE_WAIT) {
-            t._state = STATE_ACTIVE;
-
-            if (_task && (t._prio > _task->_prio || _task->_state != STATE_ACTIVE))
-                switch_task(t);
-        }
-    }
-
     // Deactivate and wait to become active
     static void wait() {
         {
@@ -155,21 +144,6 @@ public:
         }
         while (_task->_state != STATE_ACTIVE)
             LPM3;
-    }
-
-    // Wake sleeping task. Must be called with interrupts disabled. Callable from an ISR.
-    static void wake(Task& t) {
-        if (t._state == STATE_SLEEP) {
-            t._state = STATE_ACTIVE;
-
-            Task* s = next_sleeper();
-            if (s) {
-                SysTimer::set_sleeper_task(s, s->_sleep);
-            }
-            if (t._prio > _task->_prio || _task->_state != STATE_ACTIVE) {
-                switch_task(t);
-            }
-        }
     }
 
     // Task sleep.
@@ -190,6 +164,29 @@ public:
 
     // Short hand to sleep in ticks
     static void sleep(int32_t ticks) { sleep(SysTimer::future(ticks)); }
+
+    // Activate a task: make it active and switch to it if its priority is higher than
+    // the current task.  Must be called with interrupts disabled.
+    // The task can be either in a wait or sleep state.
+    static void wake(Task& t) {
+        switch (t._state) {
+        case STATE_SLEEP: {
+            t._state = STATE_ACTIVE;
+            Task* s = next_sleeper();
+            if (s) {
+                SysTimer::set_sleeper_task(s, s->_sleep);
+            }
+        }
+        // FALLTHRU
+        case STATE_WAIT:
+            t._state = STATE_ACTIVE;
+            if (_task && (t._prio > _task->_prio || _task->_state != STATE_ACTIVE))
+                switch_task(t);
+            break;
+        default:
+            break;
+        }
+    }
 
     // Launch task.
     static void launch(Task& t, StartFunc start, void* stack) {
@@ -225,6 +222,7 @@ public:
 
 protected:
     friend class Exception;
+    friend void SysTimer_ccr0_intr();
 
     // Prepare to suspend current task as per _task.  This returns 0; non-zero when
     // resumed.  All CPU register state change after this call is "lost".  Interrupts

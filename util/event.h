@@ -51,7 +51,7 @@ public:
         if (_waiter && _v) {
             Task* t = _waiter;
             _waiter = NULL;
-            Task::activate(*t);
+            Task::wake(*t);
         }
     }
 };
