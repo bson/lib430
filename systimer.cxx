@@ -20,8 +20,9 @@ void _intr_(SysTimer::Timer::VECTOR0)  SysTimer_ccr0_intr() {
 
         if (SysTimer::_sleeper && SysTimer::due((SysTimer::Future&)SysTimer::_sleep)) {
             task_wake = (Task*)SysTimer::_sleeper;
+        } else {
+            SysTimer::update_ccr();
         }
-        SysTimer::update_ccr();
     }
 
     // This can cause a task switch so needs to happen last

@@ -35,19 +35,19 @@ private:
     // Small memory model CPU state for MSP430/430X.  Top 4 bits of registers are
     // effectively unused.
     struct State {
-        // Register save slots.  First is PC, then R1 (SP), R2 (SR), no R3 slot, up to R15.
-        // R15 is last.  This layout facilitates efficient save and load.
+        // Register save slots.  First is PC, then R2 (SR), no R3 slot, up to R15.
+        // SP (R1) is last.  This layout facilitates efficient save and restore.
         uint16_t reg[15];
     } _save;
 
     // Save slots, to explain layout
     enum {
         REG_PC = 0,
-        REG_SP,
         REG_SR,
         REG_R4,
         REG_R5,
-        REG_R15 = REG_R5 + 10
+        REG_R15 = REG_R5 + 10,
+        REG_SP     // SP is saved last
     };
 
     uint8_t _prio;       // Priority; higher is higher
@@ -159,6 +159,8 @@ public:
                 Task* s = next_sleeper();
                 if (s) {
                     SysTimer::set_sleeper_task(s, s->_sleep);
+                } else {
+                    SysTimer::no_sleeper_task();
                 }
             }
         }
@@ -214,30 +216,17 @@ protected:
     // must be disabled.
     static uint16_t prepare_to_suspend(uint16_t* save_reg) {
         task_retval = 0;
-        task_reg_save = save_reg + 15;  // R15 save slot plus one
-
-        // MSP430 can't have autoinc/autodec in dst operand, so use SP and push.
+        task_reg_save = save_reg + REG_SP + 1;  // SP save slot plus one
 
         __asm("  mov.w  sp, &task_temp");    // Stash SP
-        __asm("  mov.w  &task_reg_save, sp");    // SP now points to R15 save slot + 1
-        __asm("  push.w r15");              // Save R15...
-        __asm("  push.w r14");
-        __asm("  push.w r13");
-        __asm("  push.w r12");
-        __asm("  push.w r11");
-        __asm("  push.w r10");
-        __asm("  push.w r9");
-        __asm("  push.w r8");
-        __asm("  push.w r7");
-        __asm("  push.w r6");
-        __asm("  push.w r5");
-        __asm("  push.w r4");
-        __asm("  push.w sr");                // ...through R2
-        __asm("  push.w &task_temp");        // Save stashed SP
+        __asm("  mov.w  &task_reg_save, sp");    // SP now points to SP save slot + 1
+        __asm("  push.w &task_temp");        // Save SP
+        __asm("  pushm.w #12, r15");         // Save R15-R4
+        __asm("  push.w sr");                // Save SR
         __asm("  mov.w  r12, &task_r12");
         __asm("  mov.w  sp, r12");
-        __asm("  mov.w  @sp, sp");           // Restore SP
-        __asm("  mov.w  pc, -2(r12)");
+        __asm("  mov.w  &task_temp, sp");    // Restore stashed SP
+        __asm("  mov.w  pc, -2(r12)");       // Save PC
 
         // On resume(), execution comes back here with values saved above, except for R12
         // which can be found in the global task_r12.
@@ -250,53 +239,33 @@ protected:
 #pragma FUNC_NEVER_RETURNS
     static void resume(uint16_t *save_reg) {
         task_retval = 1;
-        task_reg_save = save_reg+1;   // SP save slot
+        task_reg_save = save_reg;        // PC save slot
 
-        __asm("  mov.w  &task_reg_save, r12");
-        __asm("  mov.w  @r12+, sp");
-        __asm("  mov.w  -4(r12), &task_leap"); // Set up saved PC
-        __asm("  nop");                       // Required for SR change
-        __asm("  mov.w  @r12+, sr");
-        __asm("  nop");                       // Required for SR change
-        __asm("  mov.w  @r12+, r4");
-        __asm("  mov.w  @r12+, r5");
-        __asm("  mov.w  @r12+, r6");
-        __asm("  mov.w  @r12+, r7");
-        __asm("  mov.w  @r12+, r8");
-        __asm("  mov.w  @r12+, r9");
-        __asm("  mov.w  @r12+, r10");
-        __asm("  mov.w  @r12+, r11");
-        __asm("  mov.w  @r12+, &task_r12");
-        __asm("  mov.w  @r12+, r13");
-        __asm("  mov.w  @r12+, r14");
-        __asm("  mov.w  @r12+, r15");
-        __asm("  mov.w  &task_leap, pc");   // Weeee....
+        __asm("  mov.w  &task_reg_save, sp");
+        __asm("  pop.w  &task_leap");    // Saved PC
+        __asm("  nop");
+        __asm("  pop.w  sr");            // Saved SR
+        __asm("  nop");
+        __asm("  popm.w #12, r15");      // Restore R4-15
+        __asm("  mov.w r12, &task_r12"); // Set up R12 for resume
+        __asm("  pop.w sp");             // Restore SP
+        __asm("  mov.w &task_leap, pc");
     }
 
     // Like resume(), except returns via RETI
 #pragma FUNC_NEVER_RETURNS
     static void resume_reti(uint16_t *save_reg) {
         task_retval = 1;
-        task_reg_save = save_reg+1;   // SP save slot
+        task_reg_save = save_reg;         // PC save slot
 
-        __asm("  mov.w  &task_reg_save, r12");
-        __asm("  mov.w  @r12+, sp");
-        __asm("  mov.w  -4(r12), &task_leap"); // Set up saved PC
-        __asm("  nop");                       // Required for SR change
-        __asm("  mov.w  @r12+, sr");
-        __asm("  nop");                       // Required for SR change
-        __asm("  mov.w  @r12+, r4");
-        __asm("  mov.w  @r12+, r5");
-        __asm("  mov.w  @r12+, r6");
-        __asm("  mov.w  @r12+, r7");
-        __asm("  mov.w  @r12+, r8");
-        __asm("  mov.w  @r12+, r9");
-        __asm("  mov.w  @r12+, r10");
-        __asm("  mov.w  @r12+, r11");
-        __asm("  mov.w  @r12+, &task_r12");
-        __asm("  mov.w  @r12+, r13");
-        __asm("  mov.w  @r12+, r14");
-        __asm("  mov.w  @r12+, r15");
+        __asm("  mov.w  &task_reg_save, sp");
+        __asm("  pop.w  &task_leap");     // Saved PC
+        __asm("  nop");
+        __asm("  pop.w  sr");             // Saved SR
+        __asm("  nop");
+        __asm("  popm.w #12, r15");       // Restore R4-15
+        __asm("  mov.w  r12, &task_r12"); // Set up R12 for resume
+        __asm("  pop.w  sp");             // Restore SP
         __asm("  push.w &task_leap");
         __asm("  push.w sr");
         __asm("  reti");

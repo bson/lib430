@@ -109,6 +109,12 @@ public:
         }
     }
 
+    // No sleeper task.  Call with interrupts disabled.
+    static void no_sleeper_task() {
+        _sleeper = NULL;
+        update_ccr();
+    }
+
     // Get current sleeper task.
     static void* sleeper() { return (void*)_sleeper; }
 
