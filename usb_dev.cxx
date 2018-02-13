@@ -585,7 +585,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
             break;
         }
     }
-    USB::events().wake();
+    Task::signal((Task::WChan)&USB::events());
     LOW_POWER_MODE_EXIT;
 }
 

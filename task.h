@@ -29,6 +29,8 @@ public:
     static Task  _main;  // Main (bootstrap) task, also first in chain
     static Task* _task;  // Current running task
 
+    typedef const void *WChan;
+
 private:
     Task* _next;         // Next task in chain
 
@@ -54,6 +56,8 @@ private:
     uint8_t _state;
 
     SysTimer::Future _sleep;
+
+    WChan _wchan;      // BSD-style wait channel
 
 public:
     // Task states
@@ -120,10 +124,11 @@ public:
 
     // Deactivate and wait to become active.  Takes an optional timer param to set a
     // wait bound.
-    static void wait0(const SysTimer::Future* f = NULL) {
+    static void wait0(const SysTimer::Future* f, WChan w) {
         {
             NoInterrupt g;
 
+            _task->_wchan = w;
             if (f) {
                 _task->_state = STATE_SLEEP;
                 _task->_sleep = *f;
@@ -143,9 +148,9 @@ public:
     }
 
     // Some shorthand forms
-    static void wait() { wait0(); }
-    static void wait(const SysTimer::Future& f) { wait0(&f); }
-    static void wait(uint32_t ticks) { wait(SysTimer::future(ticks)); }
+    static void wait(WChan w = 0) { wait0(NULL, w); }
+    static void wait(const SysTimer::Future& f, WChan w = 0) { wait0(&f, w); }
+    static void wait(uint32_t ticks, WChan w = 0) { wait(SysTimer::future(ticks), w); }
 
     // Activate a task: make it active and switch to it if its priority is higher than
     // the current task.  Must be called with interrupts disabled.
@@ -167,6 +172,7 @@ public:
         // FALLTHRU
         case STATE_WAIT:
             t._state = STATE_ACTIVE;
+            t._wchan = 0;
             if (_task && (t._prio > _task->_prio || _task->_state != STATE_ACTIVE))
                 switch_task(t);
             break;
@@ -175,6 +181,20 @@ public:
         }
     }
 
+    // Signal a wait channel.  Wakes the highest priority task waiting on it, if any.
+    static void signal(WChan w) {
+        Task* best = NULL;
+        for (Task* t = &_main; t; t = t->_next) {
+            if ((t->_state == STATE_SLEEP || t->_state == STATE_WAIT) && t->_wchan == w &&
+                    (!best || t->_prio > best->_prio)) {
+                best = t;
+            }
+        }
+        if (best)
+            wake(*best);
+    }
+
+
     // Launch task.
     static void launch(Task& t, StartFunc start, void* stack) {
         t._save.reg[REG_SP] = (uint16_t)stack;
@@ -182,6 +202,7 @@ public:
         t._save.reg[REG_SR] = __get_SR_register();
         t._state            = STATE_ACTIVE;
         t._exception        = NULL;
+        t._wchan            = 0;
 
         NoInterrupt g;
         task_start = (uint16_t)start;
@@ -195,10 +216,11 @@ public:
     // Boostrap: initialize and wrap current execution context in main task
     static void bootstrap() {
         NoInterrupt g;
-        _task = &_main;
-        _main._next = NULL;
-        _main._prio = PRIO_LOW;  // Should be changed if desired
+        _task            = &_main;
+        _main._next      = NULL;
+        _main._prio      = PRIO_LOW;  // Should be changed if desired
         _main._exception = NULL; // No exception context
+        _main._wchan     = 0;
     }
 
     // Set task priority

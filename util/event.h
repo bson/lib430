@@ -7,7 +7,6 @@
 template <typename T>
 class Event {
     T _v;
-    Task* _waiter;
 public:
     Event() : _v(0) { }
     ~Event() { }
@@ -24,9 +23,7 @@ public:
     T get_event(bool wait = false) {
         while (!_v) {
             if (wait) {
-                _waiter = Task::self();
-                Task::wait();
-                _waiter = NULL;
+                Task::wait((Task::WChan)this);
             } else  {
                 return 0;
             }
@@ -42,17 +39,6 @@ public:
     // Post an event.  Note that this by itself doesn't activate the waiter.
     void post(T ev) {
         _v |= ev;
-    }
-
-    // Wake the waiter, if there is one and there are any events
-    void wake() {
-        NoInterrupt g;
-
-        if (_waiter && _v) {
-            Task* t = _waiter;
-            _waiter = NULL;
-            Task::wake(*t);
-        }
     }
 };
 
