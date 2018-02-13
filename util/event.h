@@ -46,7 +46,7 @@ public:
 
     // Wake the waiter, if there is one and there are any events
     void wake() {
-        NoInterruptReent g;
+        NoInterrupt g;
 
         if (_waiter && _v) {
             Task* t = _waiter;

@@ -75,7 +75,7 @@ public:
 #ifdef UART_TX_BUF
         // Use a reentrant guard here so in a pinch we can print debug output
         // from an ISR
-        NoInterruptReent g;
+        NoInterrupt g;
 
         // Just add byte directly to transmitter if not transmitting
         if (!_txbusy) {

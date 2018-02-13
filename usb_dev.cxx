@@ -31,7 +31,7 @@ uint8_t USB::_addr;     // Bus address 1-127
 extern void xprintf(const char *fmt, ...);
 
 void USB::reset() {
-    NoInterruptReent g;
+    NoInterrupt g;
 
     _events.set(EVENT_RESET);
 
@@ -47,7 +47,7 @@ void USB::reset() {
 }
 
 void USB::start() {
-    NoInterruptReent g;
+    NoInterrupt g;
 
     _state = STATE_INACTIVE;
     _events.set(_events.events() & EVENT_RESET); // Drop all pending events except EVENT_RESET
@@ -85,12 +85,12 @@ void USB::start() {
 }
 
 void USB::announce() {
-    NoInterruptReent g;
+    NoInterrupt g;
     _events.post(EVENT_READY);
 }
 
 void USB::suspend() {
-    NoInterruptReent g;
+    NoInterrupt g;
     UnlockConf u;
 
     USBPLLIR   = 0;       // Disable PLL IE, clear IFG
@@ -105,7 +105,7 @@ void USB::suspend() {
 void USB::resume() {
     enable_pll();
 
-    NoInterruptReent g;
+    NoInterrupt g;
     UnlockConf u;
 
     // Interrupts: VBusOff, Reset, Suspend, Setup, Setup overwrite, PLL
@@ -121,7 +121,7 @@ void USB::ready_ack() {
 
     Task::wait(TIMER_USEC(100));
 
-    NoInterruptReent g;
+    NoInterrupt g;
 
     // Clear USB buffer memory
     //memset((void*)&USBSTABUFF, 0, &USBTOPBUFF-&USBSTABUFF /*+24*/);  // Clear all USB buffer mem
@@ -169,7 +169,7 @@ void USB::enable_pll() {
         return;
     }
 
-    NoInterruptReent g;
+    NoInterrupt g;
     UnlockConf u;
 
     USBPLLIR = 0; // Disable PLL IE and clear IFGs
@@ -586,7 +586,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
         }
     }
     USB::events().wake();
-    LPM3_EXIT;
+    LOW_POWER_MODE_EXIT;
 }
 
 #endif // __MSP430_HAS_USB__

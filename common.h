@@ -28,29 +28,19 @@ disable_interrupt() {
     __disable_interrupt();
 }
 
-// RAII scope guard
+// RAII scope guard, reentrant
 class NoInterrupt {
+    uint16_t _saved;
 public:
     NoInterrupt() {
-        disable_interrupt();
+        _saved = __get_SR_register() & GIE;
+        __bic_SR_register(GIE);
+        __no_operation();
     }
 
     ~NoInterrupt() {
-        enable_interrupt();
-    }
-};
-
-// RAII scope guard, reentrant
-class NoInterruptReent {
-    uint16_t _saved;
-public:
-    NoInterruptReent() {
-        _saved = __get_SR_register() & GIE;
-        __bic_SR_register(GIE);
-    }
-
-    ~NoInterruptReent() {
         __bis_SR_register(_saved);
+        __no_operation();
     }
 };
 

@@ -3,6 +3,7 @@
 #include "common.h"
 #include "systimer.h"
 #include "task.h"
+#include "config.h"
 
 volatile uint32_t SysTimer::_time;
 volatile void* SysTimer::_sleeper;
@@ -26,7 +27,7 @@ void _intr_(SysTimer::Timer::VECTOR0)  SysTimer_ccr0_intr() {
     // This can cause a task switch so needs to happen last
     if (task_wake) {
         Task::wake(*task_wake);
-        LPM3_EXIT;
+        LOW_POWER_MODE_EXIT;
     }
 }
 

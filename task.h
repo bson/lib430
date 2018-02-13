@@ -5,6 +5,7 @@
 #include "common.h"
 #include "systimer.h"
 #include "cpu/cpu.h"
+#include "config.h"
 
 
 // Basic task model.
@@ -87,14 +88,14 @@ public:
         // active at any time.  The SR register is reset on reception to
         // the value when this function is called.
         bool receive() {
-            NoInterruptReent g;
+            NoInterrupt g;
             Task::_task->_exception = this;
             return (!Task::prepare_to_suspend(_state.reg));
         }
 
         // Post an exception to current task.
         static void post(uint16_t code) {
-            NoInterruptReent g;
+            NoInterrupt g;
             if (!Task::_task) {
                 // Not bootstrapped yet
                 return;
@@ -121,7 +122,7 @@ public:
     // wait bound.
     static void wait0(const SysTimer::Future* f = NULL) {
         {
-            NoInterruptReent g;
+            NoInterrupt g;
 
             if (f) {
                 _task->_state = STATE_SLEEP;
@@ -138,7 +139,7 @@ public:
         }
 
         while (_task->_state != STATE_ACTIVE)
-            LPM3;
+            LOW_POWER_MODE;
     }
 
     // Some shorthand forms
@@ -358,7 +359,7 @@ protected:
         enable_interrupt();
         ((StartFunc)start)();
         for (;;)
-            LPM3;
+            LOW_POWER_MODE;
     }
 
 private:
