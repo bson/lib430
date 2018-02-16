@@ -102,7 +102,7 @@ public:
            uint16_t plldiv);
 
     void init() { USB::init(); }
-    void add_eps();
+    void ready();
     void service();
     void control_req(const USB::SetupRequest* setup);
     void bulk_dev_req();

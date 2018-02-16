@@ -100,16 +100,17 @@ USBTMC<Delegate>::USBTMC(const char* manuf,
 }
 
 template <typename Delegate>
-void USBTMC<Delegate>::add_eps() {
+void USBTMC<Delegate>::ready() {
     DMSG("USBTMC: adding endpoints\n");
     USB::ready_ack();
     {
-        NoInterrupt i;
+//        NoInterrupt i;
 
         USB::add_endpoint(1, 64, 64);
         USB::add_endpoint(2, 64, 64);
+        USB::enable();
     }
-    DMSG("USBTMC: endpoints added\n");
+    DMSG("USBTMC: USB enabled\n");
 }
 
 template <typename Delegate>
@@ -248,7 +249,7 @@ void USBTMC<Delegate>::service() {
 
         case USB::EVENT_READY:
             DMSG("USBTMC: ready\n");
-            add_eps();
+            ready();
             break;
 
         case USB::EVENT_ACTIVE:

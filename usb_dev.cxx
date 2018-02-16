@@ -28,8 +28,6 @@ uint16_t USB::_brk;
 uint8_t USB::_neps;     // Number of endpoint pairs
 uint8_t USB::_addr;     // Bus address 1-127
 
-extern void xprintf(const char *fmt, ...);
-
 void USB::reset() {
     NoInterrupt g;
 
@@ -37,13 +35,14 @@ void USB::reset() {
 
     UnlockConf u;
 
+    USBCTL     = 0;
     USBPWRCTL  = 0;  // USB9 errata
     USBPHYCTL  = PUSEL;
     USBIFG     = 0;
     USBIE      = 0;
     USBPLLIR   = 0;      // Disable IE, clear IFG
     USBFUNADR  = 0;
-    USBCTL     = FEN;
+    __delay_cycles(MCLK / 1000 * 5);
 }
 
 void USB::start() {
@@ -54,15 +53,10 @@ void USB::start() {
 
     UnlockConf u;
 
-    USBCTL = FEN;
-
-    // Errata: USB9
-    USBPWRCTL  = 0;
-    __delay_cycles(MCLK / 1000 * 5);
-
-    USBCNF    &= ~(USB_EN | PUR_EN);
+    USBCNF    &= ~USB_EN;
+    USBCNF    |= PUR_EN;
     USBPLLIR  &= ~(USBOOLIE | USBLOSIE | USBOORIE);
-    USBPLLCTL &= ~UPLLEN; // Turn off PLL
+    USBPLLCTL = 0; // Turn off PLL
 
     // Enable power (self powered)
     USBPWRCTL  = VUSBEN | SLDOAON;
@@ -73,13 +67,14 @@ void USB::start() {
     USBFUNADR  = 0;
     USBPHYCTL  = PUSEL;
     USBPLLIR   = 0;      // Disable IE, clear IFG
-    USBIE      = 0;      // No other interrupts
+    USBIE      = RSTRIE; // No other interrupts
     USBIFG     = 0;      // Drop all pending interrupts
     USBIEPIE   = 0;      // Disable all EPx IN interrupts
     USBOEPIE   = 0;      // Disable all EPx OUT interrupts
     USBPWRCTL |= VBONIE; // Enable VBusOn interrupt
     USBIEPIE   = 0;      // Disable EP intrs
     USBOEPIE   = 0;      // Disable EP intrs
+    USBCTL    |= FRSTE;
 
     _events.set(EVENT_INACTIVE);
 }
@@ -98,12 +93,15 @@ void USB::suspend() {
     USBPWRCTL &= ~VBONIE;
     USBPWRCTL |= VBOFFIE;
     USBIE      = RSTRIE | RESRIE;
+    USBCTL    |= FRSTE;
 
     _events.post(EVENT_SUSPEND);
 }
 
 void USB::resume() {
     enable_pll();
+
+    Task::wait(TIMER_USEC(100));
 
     NoInterrupt g;
     UnlockConf u;
@@ -113,7 +111,7 @@ void USB::resume() {
     USBPWRCTL |= VBOFFIE;
     USBIE      = RSTRIE | SUSRIE | SETUPIE | STPOWIE;
     USBPLLIR  |= USBOOLIE | USBLOSIE | USBOORIE;
-    USBCTL    |= FEN | FRSTE;     // Enable USB transceiver
+    USBCTL    |= FRSTE;
 }
 
 void USB::ready_ack() {
@@ -144,7 +142,7 @@ void USB::ready_ack() {
     USBIEPIE     = BIT0;   // EP0 input transaction interrupts
     USBOEPIE     = BIT0;   // EP0 output transaction interrupts
 
-    _brk   = 0;         // Reset EP buffer allocation
+    _brk   = 64;         // Reset EP buffer allocation
     _neps  = 0;         // So the service task can add EPs
 
     // Reset EP1-7
@@ -152,13 +150,16 @@ void USB::ready_ack() {
         *get_conf(ep, DIR_OUT) = 0;
         *get_conf(ep, DIR_IN)  = 0;
     }
+}
+
+void USB::enable() {
+    NoInterrupt g;
+    UnlockConf u;
 
     USBIE    = RSTRIE | SUSRIE | SETUPIE /*| STPOWIE */;
     USBPLLIR = USBOOLIE | USBLOSIE | USBOORIE;  // Also clears pending PLL IFGs
 
-    USBCTL  |= FEN | FRSTE;    // Enable USB transceiver
-
-    USBCNF  |= PUR_EN;   // Pull-up on DP to let host know we're here
+    USBCTL  = FEN;
 
     _state = STATE_READY;
 }
@@ -174,18 +175,21 @@ void USB::enable_pll() {
 
     USBPLLIR = 0; // Disable PLL IE and clear IFGs
 
-#if 0
+#if 1
     // Workaorund for USB8 errata - briefly enable DCO or USB PLL may not start
-    // Not needed since we run MCLK of DCO
+    // Not needed when we run MCLK off DCO
     const uint16_t ucs4 = UCSCTL4;
     UCSCTL4 = SELA__XT2CLK | SELS__DCOCLK | SELM__XT2CLK; // Enable the DCO
 #endif
     // 3. Activate the PLL, using the required divider values.
     USBPLLDIVB = _plldiv;
+
     USBPLLCTL  = UPLLEN | UPFDEN;
 
-//    __delay_cycles(MCLK / 1000 * 5);  // 5ms delay
-//    UCSCTL4 = ucs4;    // Restore clock sources
+    __delay_cycles(MCLK / 1000 * 5);  // 5ms delay
+#if 1
+    UCSCTL4 = ucs4;    // Restore clock sources
+#endif
 
     do {
         USBPLLIR = 0; // Clear PLL IFGs
@@ -193,7 +197,6 @@ void USB::enable_pll() {
     } while (USBPLLIR);
 
     USBCNF |= USB_EN;   // USB module memory access enable
-    USBCTL  |= FEN;    // Enable USB transceiver
 }
 
 void USB::add_endpoint(int n, uint16_t rxbuf_size, uint16_t txbuf_size) {
@@ -528,7 +531,6 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
             USB::events().post(USB::EVENT_SETUP);
             break;
         case USBVECINT_RSTR:
-            USB::events().post(USB::EVENT_RESET);
             USB::reset();
             break;
         case USBVECINT_SUSR:
@@ -538,7 +540,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
             USB::events().post(USB::EVENT_RESUME);
             break;
         case USBVECINT_PWR_DROP:
-            USB::reset();
+            //USB::reset();
             break;
         case USBVECINT_PWR_VBUSOn:
             USB::announce();
@@ -585,6 +587,7 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
             break;
         }
     }
+
     Task::signal((Task::WChan)&USB::events());
     LOW_POWER_MODE_EXIT;
 }

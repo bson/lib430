@@ -242,14 +242,15 @@ public:
     static Event<uint32_t>& events() { return _events; }
 
     // Initialize
-    static void init() { }
+    static void init() {   }
 
     static void reset();
     static void start();
     static void suspend();    // Callable by ISR
     static void resume();     // Called by service task
     static void announce();   // Got VBus ON
-    static void ready_ack();  // Ready event has been processed by Class
+    static void ready_ack();  // Ready event has been processed by Class and it's ready to setup EPs
+    static void enable();     // Class setup and ready
 
     // Enable an endpoint and allocate buffer for it
     static void add_endpoint(int n, uint16_t rxbuf_size, uint16_t txbuf_size);
