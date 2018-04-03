@@ -1,6 +1,2 @@
 # lib430
-Bare metal device library for MSP430
-
-I2C host/master, timer, and various device implementations that rely on I2C the host support.
-
-The devices should be templatized so they can use any bus-device structure with the same methods.
+Bare metal device library for MSP430.  Just a collection of random code, mainly MSP430F5510.  This is all made available under an MIT-like license in the hope you'll find it useful.  See the file LICENSE for details.
