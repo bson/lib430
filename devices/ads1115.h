@@ -1,0 +1,121 @@
+// Copyright (c) 2018 Jan Brittenson
+// See LICENSE for details.
+
+#ifndef _ADS1115_H_
+#define _ADS1115_H_
+
+#include "common.h"
+
+// This assumes a grounded ADDR pin
+#define ADS1115_ADDR (0x48)
+
+namespace ads1115 {
+
+template <typename Device>
+class ADC: public Device {
+	// Device has only one converter, so only need one set of calibration
+	// data.  One table is used for values >= HI_CAL, one for smaller values.
+    const uint32_t *_cal_table_lo;
+    const uint32_t *_cal_table_hi;
+
+    enum { HI_CAL = 64 };
+
+public:
+    enum Channel {
+        // Channels
+        IN0 = 0,
+        IN1 = 1,
+        IN2 = 2,
+        IN3 = 3
+    };
+
+    enum FSR {
+        // PGA settings (Full Scale Range)
+        FSR_6_144 = 0,   // 6.144V
+        FSR_4_096 = 1,
+        FSR_2_048 = 2,
+        FSR_1_024 = 3,
+        FSR_0_512 = 4,
+        FSR_0_256 = 5  // 0.256V for values 5,6,7
+    };
+
+    enum SPS {
+        // Sample rates
+        SPS_8 = 0,
+        SPS_16 = 1,
+        SPS_32 = 2,
+        SPS_64 = 3,
+        SPS_128 = 4,
+        SPS_250 = 5,
+        SPS_475 = 6,
+        SPS_860 = 7
+    };
+
+private:
+    uint16_t _config;
+    SPS _sps;
+
+public:
+    enum {
+        // Registers (comparator is not used by this code)
+        REG_CONV = 0,   // Conversion register
+        REG_CONF = 1,   // Config register
+        REG_LO_THR = 2, // Comparator low threshold
+        REG_HI_THR = 3, // Comparator high threshold
+
+		// Config bits
+		CONF_OS = 1 << 15,
+		CONF_MUX = 1 << 12, // 12:14
+		CONF_PGA = 1 << 9,  // 9:11
+		CONF_MODE = 1 << 8,
+		CONF_DR = 1 << 5,   // 5:7
+		CONF_COMP_MODE = 1 << 4,
+		CONF_COMP_POL = 1 << 3,
+		CONF_COMP_LAT = 1 << 2,
+		CONF_COMP_QUE = 1   // 0:1
+    };
+
+    ADC(uint8_t addr)
+        : Device(addr),
+          _config(0),
+		  _cal_table_hi(NULL),
+		  _cal_table_lo(NULL) {
+    }
+
+    void probe() { Device::dummy_probe(); }
+
+    // Pro forma
+    void force_inline init() { }
+
+    // Install calibration table
+    void install_cal_table(const uint32_t *hi, const uint32_t *lo) {
+        _cal_table_hi = hi;
+        _cal_table_lo = lo;
+    }
+
+    // Select input, gain, and SPS
+    void config(Channel channel, FSR fsr, SPS sps) {
+    	    _sps = sps;
+        _config = ((channel | 0b100) << 12) | (fsr << 9) | (_sps << 5);
+    }
+
+    // Start one-shot conversion
+    void start_single_conv();
+
+    // Wait for conversion done
+    bool wait_conv();
+
+    // Read conversion register
+    uint16_t read_conv();
+
+    // Read conversion and correct for calibration
+    uint32_t read_cal();
+
+private:
+    ADC(const ADC&);
+    ADC& operator=(const ADC&);
+};
+
+}; // namespace ads1115
+
+#endif  // _ADS1115_H_
