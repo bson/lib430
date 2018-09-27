@@ -11,7 +11,7 @@
 
 #include <strings.h>
 
-#ifdef __MSP430_HAS_USB__
+#if defined(__MSP430_HAS_USB__) && defined(USE_LIB430_USB)
 
 const USB::DeviceDescriptor* USB::_dev_desc;
 const USB::ConfigDescriptor* USB::_conf_desc;
@@ -595,4 +595,4 @@ void _intr_(USB_UBM_VECTOR) usb_intr() {
     LOW_POWER_MODE_EXIT;
 }
 
-#endif // __MSP430_HAS_USB__
+#endif // __MSP430_HAS_USB__ &&  USE_LIB430_USB

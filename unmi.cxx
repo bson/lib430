@@ -4,7 +4,7 @@
 #include "common.h"
 #include "task.h"
 
-
+#if defined(USE_LIB430_UNMI)
 void _intr_(UNMI_VECTOR) unmi_isr() {
     switch(__even_in_range(SYSUNIV, 0x08)) {
     case 0x00: break;
@@ -36,3 +36,4 @@ void _intr_(UNMI_VECTOR) unmi_isr() {
     default:   break;
     }
 }
+#endif // USE_LIB430_UNMI

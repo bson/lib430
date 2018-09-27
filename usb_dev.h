@@ -19,7 +19,7 @@
 #include "task.h"
 #include "util/event.h"
 
-#ifdef __MSP430_HAS_USB__
+#if defined(__MSP430_HAS_USB__) && defined(USE_LIB430_USB)
 
 class USB {
 public:
