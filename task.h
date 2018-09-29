@@ -242,31 +242,10 @@ protected:
     friend class Exception;
     friend void SysTimer_ccr0_intr();
 
-    // Prepare to suspend current task as per _task.  This returns 0 in setuo; non-zero when
+    // Prepare to suspend current task as per _task.  This returns 0 in setup; non-zero when
     // resumed.  All CPU register state change after this call is "lost" on resume.  Interrupts
     // must be disabled.
-    static uint16_t prepare_to_suspend(uint16_t* save_reg) {
-        task_retval = 0;
-        task_reg_save = save_reg + REG_SP + 1;  // SP save slot plus one
-
-        // A bit cumbersome; would be neater with gcc style asm, but the TI compiler doesn't
-        // support it.
-        __asm("  mov.w  sp, &task_temp");    // Stash SP
-        __asm("  mov.w  &task_reg_save, sp");// SP now points to SP save slot + 1
-        __asm("  push.w &task_temp");        // Save stashed SP
-        __asm("  pushm.w #12, r15");         // Save R15-R4
-        __asm("  push.w sr");                // Save SR
-        __asm("  mov.w  r12, &task_r12");
-        __asm("  mov.w  sp, r12");
-        __asm("  mov.w  &task_temp, sp");    // Restore stashed SP
-        __asm("  mov.w  pc, -2(r12)");       // Save PC
-
-        // On resume(), execution comes back here with values saved above, except for R12
-        // which can be found in the global task_r12.
-        __asm("  mov.w  &task_r12, r12");
-
-        return task_retval;
-    }
+    static uint16_t prepare_to_suspend(uint16_t* save_reg);
 
     // Resume current task (as per _task).  Never returns.  Interrupts must be disabled.
 #pragma FUNC_NEVER_RETURNS
@@ -280,9 +259,9 @@ protected:
         __asm("  pop.w  sr");            // Saved SR
         __asm("  nop");                  // Drain pipeline SR dependency
         __asm("  popm.w #12, r15");      // Restore R4-15
-        __asm("  mov.w r12, &task_r12"); // Set up R12 for resume
-        __asm("  pop.w sp");             // Restore SP (also avoids errata CPU46)
-        __asm("  mov.w &task_leap, pc");
+        __asm("  mov.w  r12, &task_r12"); // Set up R12 for resume
+        __asm("  pop.w  sp");             // Restore SP (also avoids errata CPU46)
+        __asm("  mov.w  &task_leap, pc");
     }
 
     // Like resume(), except returns via RETI
@@ -311,7 +290,7 @@ protected:
     //     the overhead of saving state for each interrupt.
     //  2. If a switch is needed, then save the state and resume the desired task.  This has
     //     the peculiar effect of suspending a task inside an ISR, and when eventually resumed
-    //     again will resume from inside the ISR and return from the interrupt.
+    //     agai n will resume from inside the ISR and return from the interrupt.
     // This function can be used to switch to a specific service task at the end of an ISR.
     static void switch_task(Task& t) {
         // _task can be NULL before we're bootstrapped, yet we may enter an interrupt

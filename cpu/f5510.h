@@ -53,7 +53,7 @@ typedef UCB<UCB1STAT, UCB1CTL0, UCB1CTL1,
             UCB1I2CSA, UCB1IFG, UCTXIFG, UCRXIFG,
             USCI_B1_VECTOR> USCI_B1;
 
-// P1-P6 (not all pins exist externally)
+// P1-P6, PJ (not all pins exist externally)
 typedef Port<P1IN, P1OUT, P1DIR, P1SEL,
             _dummy_byte, P1REN, P1IFG, P1IES,
             P1IE> Port1;
@@ -72,5 +72,8 @@ typedef Port<P5IN, P5OUT, P5DIR, P5SEL, _dummy_byte, P5REN,
 
 typedef Port<P6IN, P6OUT, P6DIR, P6SEL, _dummy_byte, P6REN,
              _dummy_byte, _dummy_byte, _dummy_byte> Port6;
+
+typedef Port<PJIN_L, PJOUT_L, PJDIR_L, _dummy_byte, _dummy_byte,
+             PJREN_L, _dummy_byte, _dummy_byte, _dummy_byte> PortJ;
 
 #endif // _F5510_H_
