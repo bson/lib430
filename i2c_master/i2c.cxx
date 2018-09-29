@@ -14,7 +14,11 @@ void I2CBus<_USCI,_SPEED>::init() {
     USCI::CTL1 &= ~USCI::SWRST;
 
     USCI::CTL0 = USCI::MODE_3 | USCI::SYNC | USCI::MST;
+#ifdef I2C_SOURCE
+    USCI::CTL1 = USCI::I2C_SOURCE;
+#else
     USCI::CTL1 = USCI::SSEL_ACLK;
+#endif
 
     USCI::BR0   = PRESCALE;
     USCI::BR1   = PRESCALE >> 8;

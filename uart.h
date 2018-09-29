@@ -27,8 +27,11 @@ public:
     void init() {
         USCI::CTL1 |= USCI::SWRST;
         USCI::CTL1 &= ~USCI::SWRST;
+#ifdef UART_SOURCE
+        USCI::CTL1 = USCI::UART_SOURCE;
+#else
         USCI::CTL1 = USCI::SSEL_ACLK;
-
+#endif
         USCI::STAT = 0;
         USCI::CPU_IE2 &= ~(USCI::TXIE | USCI::RXIE);
 #ifdef UART_RX_BUF

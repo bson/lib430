@@ -68,7 +68,11 @@ public:
     };
 
     static void init() {
+#ifdef SYSTIMER_SOURCE
+        Timer::config(Timer::SYSTIMER_SOURCE, Timer::SOURCE_DIV_8);
+#else
         Timer::config(Timer::SOURCE_ACLK, Timer::SOURCE_DIV_8);
+#endif
         Timer::start(Timer::MODE_CONT);
         Timer::set_counter(CCR, Timer::ENABLE_INTR, CCR_LIMIT);
     }
