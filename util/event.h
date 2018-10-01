@@ -4,8 +4,8 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
-#include "common.h"
-#include "task.h"
+#include "../common.h"
+#include "../task.h"
 
 template <typename T>
 class Event {

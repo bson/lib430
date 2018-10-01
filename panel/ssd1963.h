@@ -8,8 +8,8 @@
 #ifndef _SSD1306_H_
 #define _SSD1306_H_
 
-#include "panel/font/runes.h"
-#include "common.h"
+#include "font/runes.h"
+#include "../common.h"
 
 namespace ssd1963 {
 

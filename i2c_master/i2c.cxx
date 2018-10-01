@@ -3,9 +3,9 @@
 
 #ifdef _MAIN_
 
-#include "common.h"
-#include "i2c_master/i2c.h"
-#include "timer.h"
+#include "../common.h"
+#include "i2c.h"
+#include "../timer.h"
 
 template <typename _USCI, uint32_t _SPEED>
 void I2CBus<_USCI,_SPEED>::init() {

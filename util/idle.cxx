@@ -2,7 +2,7 @@
 // See LICENSE for details.
 
 #include "idle.h"
-#include "task.h"
+#include "../task.h"
 
 Activity* Idle::_activity = NULL;
 SysTimer::Future Idle::_next_due;

@@ -5,16 +5,16 @@
 // SSD1306 based 128x64 monochrome OLED on I2C panel
 //
 
-#include "common.h"
-#include "panel/ssd1306.h"
+#include "../common.h"
+#include "../panel/ssd1306.h"
 
-#include "panel/font/runes.h"
+#include "../panel/font/runes.h"
 
 // Realize code for I2C based device
-#include "i2c_master/i2c.h"
+#include "../i2c_master/i2c.h"
 
 namespace rune_defs {
-#include "panel/font/runes.inc"
+#include "../panel/font/runes.inc"
 }
 
 namespace ssd1306 {

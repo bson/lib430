@@ -1,8 +1,8 @@
 // Copyright (c) 2018 Jan Brittenson
 // See LICENSE for details.
 
-#include "common.h"
-#include "crc16.h"
+#include "../common.h"
+#include "../util/crc16.h"
 
 // Bitwise implementation.  Godawful slow, but it works.
 void Crc16::Update(uint8_t d)

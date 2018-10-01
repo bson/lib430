@@ -190,6 +190,9 @@ public:
         }
     }
 
+    // Alternate, member form
+    void wake() { wake(*this); }
+
     // Signal a wait channel.  Wakes the highest priority task waiting on it, if any.
     static void signal(WChan w) {
         Task* best = NULL;

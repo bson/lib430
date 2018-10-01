@@ -2,14 +2,14 @@
 // See LICENSE for details.
 
 #include <stdint.h>
-#include "common.h"
+#include "../common.h"
 #include "ssd1963.h"
-#include "task.h"
-#include "panel/font/runes.h"
+#include "../task.h"
+#include "font/runes.h"
 #include "hsd04319w1_a.h"
 
 namespace rune_defs {
-#include "panel/font/runes.inc"
+#include "font/runes.inc"
 }
 
 namespace ssd1963 {

@@ -4,12 +4,12 @@
 #ifndef _F5510_H_
 #define _F5510_H_
 
-#include "common.h"
-#include "timer.h"
-#include "systimer.h"
-#include "usci_a.h"
-#include "usci_b.h"
-#include "gpio.h"
+#include "../common.h"
+#include "../timer.h"
+#include "../systimer.h"
+#include "../usci_a.h"
+#include "../usci_b.h"
+#include "../gpio.h"
 
 // 3x TimerA, 1x TimerB
 // A and B differ in the number of CCR registers; TimerB has 8, plus an expansion register.

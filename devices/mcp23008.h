@@ -4,7 +4,7 @@
 #ifndef _MCP23008_H_
 #define _MCP23008_H_
 
-#include "common.h"
+#include "../common.h"
 
 #define MCP23008_ADDR(A0,A1,A2)  \
 	(0x20 | (A0) | ((A1) << 1) | ((A2) << 2))
