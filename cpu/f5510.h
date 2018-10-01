@@ -11,6 +11,20 @@
 #include "../usci_b.h"
 #include "../gpio.h"
 
+// Info flash blocks
+namespace FlashBlock {
+enum {
+    INFOA = 0x1980,
+    INFOB = 0x1900,
+    INFOC = 0x1880,
+    INFOD = 0x1800,
+    INFOA_SIZE = 128,
+    INFOB_SIZE = 128,
+    INFOC_SIZE = 128,
+    INFOD_SIZE = 128,
+};
+}
+
 // 3x TimerA, 1x TimerB
 // A and B differ in the number of CCR registers; TimerB has 8, plus an expansion register.
 typedef TimerA3<TA0CTL, TA0R, TA0CCTL0,
