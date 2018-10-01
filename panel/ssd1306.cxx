@@ -6,15 +6,15 @@
 //
 
 #include "../common.h"
-#include "../panel/ssd1306.h"
+#include "ssd1306.h"
 
-#include "../panel/font/runes.h"
+#include "font/runes.h"
 
 // Realize code for I2C based device
 #include "../i2c_master/i2c.h"
 
 namespace rune_defs {
-#include "../panel/font/runes.inc"
+#include "font/runes.inc"
 }
 
 namespace ssd1306 {
