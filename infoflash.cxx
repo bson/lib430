@@ -30,9 +30,7 @@ bool InfoFlash::WriteFlash(uint16_t addr, const void* block, uint16_t len) {
     while (FCTL3 & BUSY)
         ;
 
-    //FCTL3 = FWPW;       // Unlock
     FCTL1 = FWPW + WRT; // Enable segment write
-    //FCTL4 = FWPW;       // Unlock info flash
 
     uint16_t* dest = (uint16_t*)addr;
     len /= 2;
