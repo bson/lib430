@@ -49,5 +49,5 @@ bool InfoFlash::WriteFlash(uint16_t addr, const void* block, uint16_t len) {
     WDTCTL = wdctl;
 
     // Verify result
-    return !memcmp((const uint8_t*)addr, block, len);
+    return !memcmp((const uint8_t*)addr, block, len*2);
 }

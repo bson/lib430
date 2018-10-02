@@ -1,5 +1,12 @@
 #include "common.h"
 
+// Info flash writer.  No special read is needed, just locate a symbol at
+// addr since it's memory mapped.  This can be done for ADDR with:
+//
+//   Data _data __attribute__((location(ADDR), noinit));
+//
+// Where Data is a struct or other suitable POD type.
+
 class InfoFlash {
 public:
     // Write a block of flash.  Addr and block should be word aligned and len
@@ -7,10 +14,4 @@ public:
     // written by this (it will reject the address and in either case won't clear
     // the LOCKA bit to unlock it).
     static bool WriteFlash(uint16_t addr, const void* block, uint16_t len);
-
-    // Read as block of flash
-    static bool ReadFlash(uint16_t addr, void* block, uint16_t len) {
-        memcpy(block, (const uint8_t*)addr, len);
-        return true;
-    }
 };
