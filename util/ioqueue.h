@@ -47,29 +47,31 @@ public:
     }
 
     // Check if there is another buffer available to fill at head
-    bool head_available() { return _depth != STORAGE; }
+    bool head_available() const { return _depth != STORAGE; }
 
     // Check if there is a buffer available for processing at tail
-    bool tail_available() { return _depth != 0; }
+    bool tail_available() const { return _depth != 0; }
 
     // Return head buffer, to fill
     uint8_t *head() { return _v + _head; }
+    const uint8_t *head() const { return _v + _head; }
 
     // Release head buffer for processing
     void process_head() {
         _depth += SIZE;
         if ((_head += SIZE) >= STORAGE)
-            _head -= STORAGE;
+            _head = 0;
     }
 
     // Return tail buffer for processing
     uint8_t *tail() { return _v + _tail; }
+    const uint8_t *tail() const { return _v + _tail; }
 
     // Return tail buffer to pool
     void recycle_tail() {
         _depth -= SIZE;
         if ((_tail += SIZE) >= STORAGE)
-            _tail -= STORAGE;
+            _tail = 0;
     }
 
 private:
