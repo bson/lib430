@@ -6,8 +6,8 @@
 // This is a very simple I/O buffer queue consisting of a number of buffers,
 // a ring head, and a ring tail.  To eliminate ambiguity
 // over whether the ring is emtpy or full (head == tail), it explicitly
-// tracks the number of items.  The underlying objects are owned by the queue.
-// Its intended purpose is for producer-consumer patterns.  It's task safe.
+// tracks the buffer usage.  The underlying objects are owned by the queue.
+// Its intended purpose is for producer-consumer patterns.
 //
 // Usage goes like this:
 // Receiver task:
