@@ -11,11 +11,11 @@ namespace mcp23008 {
 template <typename Device>
 void Expander<Device>::init() {
     // MCP23008 - set all pins to output, no pull-up, no interrupts
-    Device::transmit(MCP23008_IODIR, 0);
-    Device::transmit(MCP23008_IPOL, 0);
-    Device::transmit(MCP23008_GPPU, 0);
-    Device::transmit(MCP23008_GPINTEN, 0);
-    Device::transmit(MCP23008_IOCON, 0x20);  // Set SEQOP
+    Device::transmit(REG_IODIR, 0);
+    Device::transmit(REG_IPOL, 0);
+    Device::transmit(REG_GPPU, 0);
+    Device::transmit(REG_GPINTEN, 0);
+    Device::transmit(REG_IOCON, 0x20);  // Set SEQOP
 }
 
 };

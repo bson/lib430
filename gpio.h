@@ -135,6 +135,16 @@ public:
     static force_inline void ack_int() {
     		PORT::P_IFG &= ~MASK;
     };
+
+    // Make input
+    static force_inline void make_input() {
+        PORT::P_DIR &= ~MASK;
+    }
+
+    // Make output
+    static force_inline void make_output() {
+        PORT::P_DIR |= MASK;
+    }
 };
 
 // Dummy no-op pin for uses where no pin is needed.

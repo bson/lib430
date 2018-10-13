@@ -14,17 +14,17 @@ namespace mcp23008 {
 template <typename Device>
 class Expander: public Device {
 public:
-    enum { MCP23008_IODIR  = 0x00,
-           MCP23008_IPOL   = 0x01,
-           MCP23008_GPINTEN= 0x02,
-           MCP23008_DEFVAL = 0x03,
-           MCP23008_INTCON = 0x04,
-           MCP23008_IOCON  = 0x05,
-           MCP23008_GPPU   = 0x06,
-           MCP23008_INTF   = 0x07,
-           MCP23008_INTCAP = 0x08,
-           MCP23008_GPIO   = 0x09,
-           MCP23008_OLAT   = 0x0A
+    enum { REG_IODIR  = 0x00,
+           REG_IPOL   = 0x01,
+           REG_GPINTEN= 0x02,
+           REG_DEFVAL = 0x03,
+           REG_INTCON = 0x04,
+           REG_IOCON  = 0x05,
+           REG_GPPU   = 0x06,
+           REG_INTF   = 0x07,
+           REG_INTCAP = 0x08,
+           REG_GPIO   = 0x09,
+           REG_OLAT   = 0x0A
     };
 
     Expander(uint8_t addr)
@@ -43,7 +43,7 @@ public:
     // Implement write sequence so that bytes written appear on the
     // GPIO pin outputs.
     bool start_write(uint8_t data) {
-        return Device::start_write(MCP23008_GPIO) && Device::write(data);
+        return Device::start_write(REG_GPIO) && Device::write(data);
     }
                          
     bool write(uint8_t data) { return Device::write(data); }
