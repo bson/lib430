@@ -8,10 +8,10 @@
 namespace WDT {
 enum { VECTOR = WDT_VECTOR };
 
-// Initialize WDT at SMCLK/8M, but hold and don't start
+// Initialize WDT at ACLK/8M, but hold and don't start
 // E.g. 12M XT2 => ~1.25s
 static void init() {
-    WDTCTL = WDTPW | WDTHOLD | WDTSSEL__SMCLK | WDTIS__8192K | WDTCNTCL;
+    WDTCTL = WDTPW | WDTHOLD | WDTSSEL__ACLK | WDTIS__8192K | WDTCNTCL;
 }
 
 static void stop() {
