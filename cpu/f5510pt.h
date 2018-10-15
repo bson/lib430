@@ -25,6 +25,8 @@ enum {
 };
 }
 
+enum { BSL_TRANSFER = 0x1000 };
+
 // 3x TimerA, 1x TimerB
 // A and B differ in the number of CCR registers; TimerB has 8, plus an expansion register.
 typedef TimerA3<TA0CTL, TA0R, TA0CCTL0,
