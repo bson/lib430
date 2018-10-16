@@ -38,7 +38,14 @@ public:
         }
     }
 
-    void init();
+    void init() {
+        // MCP23008 - set all pins to output, no pull-up, no interrupts
+        Device::transmit(REG_IODIR, 0);
+        Device::transmit(REG_IPOL, 0);
+        Device::transmit(REG_GPPU, 0);
+        Device::transmit(REG_GPINTEN, 0);
+        Device::transmit(REG_IOCON, 0x20);  // Set SEQOP
+    }
 
     // Implement write sequence so that bytes written appear on the
     // GPIO pin outputs.

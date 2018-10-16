@@ -56,7 +56,7 @@ private:
     };
 
     uint8_t _prio;       // Priority; higher is higher
-    uint8_t _state;      // STATE_xxxx
+    volatile uint8_t _state;      // STATE_xxxx
 
     // When in sleep, this is the wake time, although a task can be
     // woken prematurely through wake().
