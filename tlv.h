@@ -15,6 +15,7 @@ class Tag {
 public:
     Tag() : addr((const uint8_t*)TLV_BASE) { }
     Tag(const uint8_t* tagaddr) : addr(tagaddr+1) { }
+    Tag(const uint16_t* tagaddr) : addr((const uint8_t*)tagaddr + 1) { }
 
     Tag(const Tag& arg) : addr(arg.addr) { }
 
@@ -34,14 +35,23 @@ public:
     bool end() const { return code() == TLV_TAGEND; }
 
     // Advance to the next tag
-    void advance()  { addr += *addr + 1; }
+    void advance()  { addr += *addr + 2; }
 };
 
 // Find the nth of a tag.  Returns end tag if not found.
 Tag find(uint8_t tag, int nth = 0);
 
+// Return the memory table base
+const uint16_t* mem_base();
+
 // Find a pid
-Tag findPid(uint8_t pid, int nth = 0);
+Tag find_pid(uint8_t pid, int nth = 0);
+
+// Return number of known memory segments
+int n_mem_segments();
+
+// Return address of memory segment N
+uint16_t mem_segment(uint n);
 
 // Peripheral IDs
 enum {
