@@ -15,8 +15,11 @@ public:
 public:
     typedef _USCI USCI;
 
+#if defined(I2C_SOURCE) && (I2C_SOURCE==SSEL_SMCLK)
+    enum { PRESCALE = SMCLK/_SPEED };
+#else
     enum { PRESCALE = ACLK/_SPEED };
-
+#endif
     // Begin a write transaction and write the first byte.
     static bool start_write(uint8_t addr, uint8_t data);
 

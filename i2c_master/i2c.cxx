@@ -91,6 +91,10 @@ bool I2CBus<_USCI,_SPEED>::wait_tx() {
             return true;
         }
     }
+    // Check again, just in case we had a context switch that forced us into timeout
+    if (USCI::CPU_IFG & USCI::TXIFG) {
+        return true;
+    }
     bus_reset();
     return false;
 }
