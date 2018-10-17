@@ -27,6 +27,10 @@ enum {
 
 enum { BSL_TRANSFER = 0x1000 };
 
+// This is missing from the TI include file for the MSP430F5510
+enum { __MSP430_BASEADDRESS_TLV__ = 0x01a08 };
+
+
 // 3x TimerA, 1x TimerB
 // A and B differ in the number of CCR registers; TimerB has 8, plus an expansion register.
 typedef TimerA3<TA0CTL, TA0R, TA0CCTL0,

@@ -7,11 +7,8 @@
 
 namespace TLV {
 
-enum { __MSP430_BASEADDRESS_TLV__ = 0x01a08 };
-
 // TLV tags consist of an 8 bit tag code, followed by a length, also
-// 8 bits.  Then the same number of bytes as the length.  In other words,
-// the length excludes the tag code and the length itself.
+// 8 bits.  Then 'length' number of bytes,
 
 class Tag {
     const uint8_t *addr;  // Tag address (points to length)
@@ -37,7 +34,7 @@ public:
     bool end() const { return code() == TLV_TAGEND; }
 
     // Advance to the next tag
-    void advance()  { addr += *addr; }
+    void advance()  { addr += *addr + 1; }
 };
 
 // Find the nth of a tag.  Returns end tag if not found.
