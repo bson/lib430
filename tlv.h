@@ -34,6 +34,9 @@ public:
     // True if this is the last tag
     bool end() const { return code() == TLV_TAGEND; }
 
+    // Alternate name
+    bool not_found() const { return code() == TLV_TAGEND; }
+
     // Advance to the next tag
     void advance()  { addr += *addr + 2; }
 };
