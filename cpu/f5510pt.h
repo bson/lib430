@@ -75,25 +75,25 @@ typedef UCB<UCB1STAT, UCB1CTL0, UCB1CTL1,
 
 // P1-P6, PJ (not all pins exist externally)
 typedef Port<P1IN, P1OUT, P1DIR, P1SEL,
-            _dummy_byte, P1REN, P1IFG, P1IES,
+            _dummy_byte, P1REN, P1DS, P1IFG, P1IES,
             P1IE> Port1;
 
-typedef Port<P2IN, P2OUT, P2DIR, P2SEL, _dummy_byte, P2REN, P2IFG, P2IES,
+typedef Port<P2IN, P2OUT, P2DIR, P2SEL, _dummy_byte, P2REN, P2DS, P2IFG, P2IES,
              P2IE> Port2;
 
-typedef Port<P3IN, P3OUT, P3DIR, P3SEL, _dummy_byte, P3REN,
+typedef Port<P3IN, P3OUT, P3DIR, P3SEL, _dummy_byte, P3REN, P3DS,
              _dummy_byte, _dummy_byte, _dummy_byte> Port3;
 
-typedef Port<P4IN, P4OUT, P4DIR, P4SEL, _dummy_byte, P4REN,
+typedef Port<P4IN, P4OUT, P4DIR, P4SEL, _dummy_byte, P4REN, P4DS,
              _dummy_byte, _dummy_byte, _dummy_byte> Port4;
 
-typedef Port<P5IN, P5OUT, P5DIR, P5SEL, _dummy_byte, P5REN,
+typedef Port<P5IN, P5OUT, P5DIR, P5SEL, _dummy_byte, P5REN, P5DS,
              _dummy_byte, _dummy_byte, _dummy_byte> Port5;
 
-typedef Port<P6IN, P6OUT, P6DIR, P6SEL, _dummy_byte, P6REN,
+typedef Port<P6IN, P6OUT, P6DIR, P6SEL, _dummy_byte, P6REN, P6DS,
              _dummy_byte, _dummy_byte, _dummy_byte> Port6;
 
 typedef Port<PJIN_L, PJOUT_L, PJDIR_L, _dummy_byte, _dummy_byte,
-             PJREN_L, _dummy_byte, _dummy_byte, _dummy_byte> PortJ;
+             PJREN_L, PJDS_L, _dummy_byte, _dummy_byte, _dummy_byte> PortJ;
 
 #endif // _F5510_H_

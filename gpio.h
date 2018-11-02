@@ -16,6 +16,7 @@ template <volatile uint8_t& _IN,
           volatile uint8_t& _SEL,
           volatile uint8_t& _SEL2,
           volatile uint8_t& _REN,
+          volatile uint8_t& _DS,
           volatile uint8_t& _IFG,
           volatile uint8_t& _IES,
           volatile uint8_t& _IE>
@@ -27,6 +28,7 @@ public:
     ACCESSOR(volatile uint8_t&, getPSEL, _SEL);
     ACCESSOR(volatile uint8_t&, getPSEL2, _SEL2);
     ACCESSOR(volatile uint8_t&, getPREN, _REN);
+    ACCESSOR(volatile uint8_t&, getPDS, _DS);
     ACCESSOR(volatile uint8_t&, getPIFG, _IFG);
     ACCESSOR(volatile uint8_t&, getPIES, _IES);
     ACCESSOR(volatile uint8_t&, getPIE, _IE);
@@ -73,6 +75,11 @@ public:
     enum Edge {
     		RISE = 0,
 		FALL = MASK
+    };
+
+    enum DriveStrength {
+        LOW = 0,
+        HIGH = MASK
     };
 
     // Pin.IN gettor
@@ -145,6 +152,11 @@ public:
     static force_inline void make_output() {
         PORT::P_DIR |= MASK;
     }
+
+    // Set drive strength
+    static force_inline void set_drive(DriveStrength ds) {
+        PORT::P_DS = (PORT::P_DS & ~MASK) | uint8_t(ds);
+    }
 };
 
 // Dummy no-op pin for uses where no pin is needed.
@@ -176,15 +188,21 @@ public:
 		FALL = MASK
     };
 
+    enum DriveStrength {
+        LOW = 0,
+        HIGH = MASK
+    };
+
     static force_inline uint8_t getIN() { return 0; }
     static force_inline void set(bool state) { }
     static force_inline void config(Direction dir,
                                     Select sel,
-                                    Pullup ren = NO_RESISTOR) { };
-    static force_inline void enable_int(Edge edge) { };
-    static force_inline void disable_int() { };
+                                    Pullup ren = NO_RESISTOR) { }
+    static force_inline void enable_int(Edge edge) { }
+    static force_inline void disable_int() { }
     static force_inline bool pending_int() { return false; }
-    static force_inline void toggle_edge() { };
-    static force_inline void ack_int() { };
+    static force_inline void toggle_edge() { }
+    static force_inline void ack_int() { }
+    static force_inline void set_drive(DriveStrength ds) { }
 };
 #endif // _GPIO_H_

@@ -56,6 +56,7 @@
 #define P_SEL getPSEL()
 #define P_SEL2 getPSEL2()
 #define P_REN getPREN()
+#define P_DS getPDS()
 #define P_IFG getPIFG()
 #define P_IES getPIES()
 #define P_IE getPIE()

@@ -10,38 +10,38 @@
 #include "usci_b.h"
 #include "gpio.h"
 
-typedef TimerA3<msp430::TA0CTL, msp430::TA0R, msp430::TA0CCTL0,
-                msp430::TA0CCR0, msp430::TA0CCTL1, msp430::TA0CCR1,
-                msp430::TA0CCTL2, msp430::TA0CCR2, msp430::TA0IV,
+typedef TimerA3<TA0CTL, TA0R, TA0CCTL0,
+                TA0CCR0, TA0CCTL1, TA0CCR1,
+                TA0CCTL2, TA0CCR2, TA0IV,
                 TIMER0_A0_VECTOR, TIMER0_A1_VECTOR> TimerA3_0;
 
 // System needs a timer someplace.
 typedef TimerA3_0 SysTimer;
 
-typedef UCA<msp430::UCA0STAT, msp430::UCA0CTL0, msp430::UCA0CTL1,
-            msp430::UCA0MCTL, msp430::UCA0BR0, msp430::UCA0BR1,
-            msp430::UCA0RXBUF, msp430::UCA0TXBUF, msp430::UCA0ABCTL,
-            msp430::UCA0IRTCTL, msp430::UCA0IRRCTL, msp430::IE2,
-            msp430::IFG2, UCA0RXIE, UCA0TXIE, UCA0RXIFG, UCA0TXIFG> UCA0;
+typedef UCA<UCA0STAT, UCA0CTL0, UCA0CTL1,
+            UCA0MCTL, UCA0BR0, UCA0BR1,
+            UCA0RXBUF, UCA0TXBUF, UCA0ABCTL,
+            UCA0IRTCTL, UCA0IRRCTL, IE2,
+            IFG2, UCA0RXIE, UCA0TXIE, UCA0RXIFG, UCA0TXIFG> UCA0;
 
-typedef UCB<msp430::UCB0STAT, msp430::UCB0CTL0, msp430::UCB0CTL1,
-            msp430::UCB0BR0, msp430::UCB0BR1, msp430::UCB0I2CIE,
-            msp430::UCB0RXBUF, msp430::UCB0TXBUF, msp430::UCB0I2COA,
-            msp430::UCB0I2CSA, msp430::UC0IFG, UCB0TXIFG, UCB0RXIFG> UCB0;
+typedef UCB<UCB0STAT, UCB0CTL0, UCB0CTL1,
+            UCB0BR0, UCB0BR1, UCB0I2CIE,
+            UCB0RXBUF, UCB0TXBUF, UCB0I2COA,
+            UCB0I2CSA, UC0IFG, UCB0TXIFG, UCB0RXIFG> UCB0;
 
-typedef Port<msp430::P1IN, msp430::P1OUT, msp430::P1DIR, msp430::P1SEL,
-             msp430::P1SEL2, msp430::P1REN, msp430::P1IFG, msp430::P1IES,
-             msp430::P1IE> Port1;
+typedef Port<P1IN, P1OUT, P1DIR, P1SEL,
+             P1SEL2, P1REN, P1DS, P1IFG, P1IES,
+             P1IE> Port1;
 
-typedef Port<msp430::P2IN, msp430::P2OUT, msp430::P2DIR, msp430::P2SEL,
-             msp430::P2SEL2, msp430::P2REN, msp430::P2IFG, msp430::P2IES,
-             msp430::P2IE> Port2;
+typedef Port<P2IN, P2OUT, P2DIR, P2SEL,
+             P2SEL2, P2REN, P2DS, P2IFG, P2IES,
+             P2IE> Port2;
 
 extern volatile uint8_t _dummy_byte;
 
 // 28 pin devices only
-typedef Port<msp430::P3IN, msp430::P3OUT, msp430::P3DIR, msp430::P3SEL,
-            msp430::P3SEL2, msp430::P3REN, _dummy_byte, _dummy_byte,
+typedef Port<P3IN, P3OUT, P3DIR, P3SEL,
+            P3SEL2, P3REN, _dummy_byte, _dummy_byte,
             _dummy_byte> Port3;
 
 #endif // _G2553_H_
