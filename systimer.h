@@ -109,7 +109,7 @@ public:
 
     // Set sleeper task.  Call with interrupts disabled.
     static void set_sleeper_task(void* task, const Future& sleep) {
-        if (task != _sleeper) {
+       if (task != _sleeper) {
             _sleeper = task;
             _sleep = (Future&)sleep;
             update_ccr();
