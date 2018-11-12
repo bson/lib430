@@ -7,6 +7,24 @@
 #include "../common.h"
 #include "../task.h"
 
+// Simple event mask pattern:
+//   Event<uint16_t> _ev;
+//
+// Task A:
+//    // with interrupts disabled
+//    const uint16_t next_event = _ev.get_event(true);
+//
+// Task B:
+//    // with interrupts disabled
+//    _ev.post(EVENT1 | EVENT2);
+//    Task::broadcast(Task::WChan(&_ev));  // wake any task waiting
+//
+// get_event() returns the lowest bit set in the event mask.  If the
+// mask is e.g. 0b0110 it will return 0b0010 and remove it from the
+// mask.  The next time it returns 0b0100 and removes that, and from
+// thereon it will return 0, or wait for a nonzero mask if the wait
+// flag parameter is supplied.
+//
 template <typename T>
 class Event {
     T _v;
@@ -24,15 +42,12 @@ public:
     // Only one task can wait; only one will be woken with the others remaining
     // in wait indefinitely (or if explicitly activated).
     T get_event(bool wait = false) {
-        while (!_v) {
-            if (wait) {
-                Task::wait((Task::WChan)this);
-            } else  {
-                return 0;
-            }
-        }
+        if (!_v && !wait)
+            return 0;
 
-        NoInterrupt g;
+        while (!_v) {
+            Task::wait(Task::WChan(this));
+        }
 
         const T pending = _v & ~(_v - 1);
         _v &= ~pending;
