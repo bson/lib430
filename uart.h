@@ -6,6 +6,7 @@
 
 #include "common.h"
 #include "util/deque.h"
+#include "task.h"
 
 template <typename USCI>
 class Uart {
@@ -79,19 +80,16 @@ public:
     bool start_write(uint8_t data) { write(data); return true; }
     bool write(uint8_t data) {
 #ifdef UART_TX_BUF
-        // Use a reentrant guard here so in a pinch we can print debug output
-        // from an ISR
-        NoInterrupt g;
-
         // Just add byte directly to transmitter if not transmitting
         if (!_txbusy) {
             USCI::TXBUF = data;
             _txbusy = true;
         } else {
             // Otherwise add it to the buffer
-            if (_txbuf.space()) {
-                _txbuf.push_back(data);
-            }
+            while (!_txbuf.space())
+                Task::wait(Task::WChan(this));
+
+            _txbuf.push_back(data);
         }
         return true;
 #else // POLLED
@@ -142,6 +140,7 @@ public:
             } else {
                 USCI::TXBUF = _txbuf.pop_front();
             }
+            Task::signal(Task::WChan(this));
         }
 #endif
 #ifdef UART_RX_BUF

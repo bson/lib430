@@ -4,14 +4,17 @@
 
 namespace TLV {
 
-
 Tag find(uint8_t tag, int nth) {
     Tag t;
-    while (!t.end() && t.code() != tag && nth) {
+
+    while (!t.end()) {
+        if (t.code() == tag) {
+            if (!--nth)
+                break;
+        }
         t.advance();
-        if (t.code() == tag)
-            --nth;
     }
+
     return t;
 }
 
@@ -54,11 +57,14 @@ Tag find_pid(uint8_t pid, int nth) {
 
     Tag t(pid_base);
 
-    while (!t.end() && t.code() != pid && nth) {
+    while (!t.end()) {
+        if (t.code() == pid) {
+            if (!--nth)
+                break;
+        }
         t.advance();
-        if (t.code() == pid)
-            --nth;
     }
+
     return t;
 }
 

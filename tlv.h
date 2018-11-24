@@ -13,7 +13,7 @@ namespace TLV {
 class Tag {
     const uint8_t *addr;  // Tag address (points to length)
 public:
-    Tag() : addr((const uint8_t*)TLV_BASE) { }
+    Tag() : addr((const uint8_t*)TLV_BASE + 1) { }
     Tag(const uint8_t* tagaddr) : addr(tagaddr+1) { }
     Tag(const uint16_t* tagaddr) : addr((const uint8_t*)tagaddr + 1) { }
 
@@ -30,6 +30,7 @@ public:
     uint8_t code() const { return addr[-1]; }
     uint8_t size() const { return *addr; }
     const uint8_t* data() const { return addr+1; }
+    uint16_t address() const { return uint16_t(addr); }
 
     // True if this is the last tag
     bool end() const { return code() == TLV_TAGEND; }
@@ -42,13 +43,13 @@ public:
 };
 
 // Find the nth of a tag.  Returns end tag if not found.
-Tag find(uint8_t tag, int nth = 0);
+Tag find(uint8_t tag, int nth = 1);
 
 // Return the memory table base
 const uint16_t* mem_base();
 
 // Find a pid
-Tag find_pid(uint8_t pid, int nth = 0);
+Tag find_pid(uint8_t pid, int nth = 1);
 
 // Return number of known memory segments
 int n_mem_segments();
