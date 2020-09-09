@@ -29,6 +29,7 @@ enum { BSL_TRANSFER = 0x1000 };
 
 // This is missing from the TI include file for the MSP430F5510
 enum { __MSP430_BASEADDRESS_TLV__ = 0x01a08 };
+enum { TLV_BASE = __MSP430_BASEADDRESS_TLV__ };
 
 
 // 3x TimerA, 1x TimerB
