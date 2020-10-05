@@ -1,3 +1,6 @@
+// Copyright (c) 2020 Jan Brittenson
+// See LICENSE for details.
+
 #ifndef _WDT_H_
 #define _WDT_H_
 

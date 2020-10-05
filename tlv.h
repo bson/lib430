@@ -1,3 +1,6 @@
+// Copyright (c) 2020 Jan Brittenson
+// See LICENSE for details.
+
 #ifndef _TLV_H_
 #define _TLV_H_
 

@@ -1,3 +1,6 @@
+// Copyright (c) 2020 Jan Brittenson
+// See LICENSE for details.
+
 #include <stdint.h>
 #include "common.h"
 #include "tlv.h"

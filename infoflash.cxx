@@ -1,3 +1,6 @@
+// Copyright (c) 2020 Jan Brittenson
+// See LICENSE for details.
+
 #include "common.h"
 #include "infoflash.h"
 #include "task.h"

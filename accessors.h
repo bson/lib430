@@ -1,6 +1,9 @@
 #ifndef _ACCESSORS_H_
 #define _ACCESSORS_H_
 
+// Copyright (c) 2020 Jan Brittenson
+// See LICENSE for details.
+
 // This file contains accessor names.  The reason for this file
 // is that we collect control registers into uniform namespaces
 // in the form of classes.

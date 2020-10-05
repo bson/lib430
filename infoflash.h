@@ -1,3 +1,9 @@
+// Copyright (c) 2020 Jan Brittenson
+// See LICENSE for details.
+
+#ifndef _INFOFLASH_H_
+#define _INFOFLASH_H_
+
 #include "common.h"
 
 // Info flash writer.  No special read is needed, just locate a symbol at
@@ -15,3 +21,4 @@ public:
     // the LOCKA bit to unlock it).
     static bool WriteFlash(uint16_t addr, const void* block, uint16_t len);
 };
+#endif // _INFOFLASH_H_
